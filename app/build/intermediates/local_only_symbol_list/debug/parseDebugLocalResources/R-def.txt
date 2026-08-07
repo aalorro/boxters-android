@@ -1,0 +1,16 @@
+R_DEF: Internal format may change without notice
+local
+drawable ic_launcher_background
+drawable ic_launcher_foreground
+font cinzel_black
+font cinzel_bold
+font cinzel_regular
+font cinzel_variable
+font inter_light
+font inter_regular
+font inter_semibold
+font inter_variable
+mipmap ic_launcher
+mipmap ic_launcher_round
+string app_name
+style Theme.Boxters

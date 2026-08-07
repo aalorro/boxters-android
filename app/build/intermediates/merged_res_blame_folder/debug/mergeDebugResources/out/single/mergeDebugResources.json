@@ -1,0 +1,50 @@
+[
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/font_cinzel_bold.ttf.flat",
+        "source": "com.artmondo.boxters.app-main-46:/font/cinzel_bold.ttf"
+    },
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/font_inter_regular.ttf.flat",
+        "source": "com.artmondo.boxters.app-main-46:/font/inter_regular.ttf"
+    },
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/font_inter_light.ttf.flat",
+        "source": "com.artmondo.boxters.app-main-46:/font/inter_light.ttf"
+    },
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/font_cinzel_black.ttf.flat",
+        "source": "com.artmondo.boxters.app-main-46:/font/cinzel_black.ttf"
+    },
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/font_cinzel_variable.ttf.flat",
+        "source": "com.artmondo.boxters.app-main-46:/font/cinzel_variable.ttf"
+    },
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.artmondo.boxters.app-main-46:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.artmondo.boxters.app-main-46:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.artmondo.boxters.app-main-46:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/font_inter_semibold.ttf.flat",
+        "source": "com.artmondo.boxters.app-main-46:/font/inter_semibold.ttf"
+    },
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/font_inter_variable.ttf.flat",
+        "source": "com.artmondo.boxters.app-main-46:/font/inter_variable.ttf"
+    },
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/font_cinzel_regular.ttf.flat",
+        "source": "com.artmondo.boxters.app-main-46:/font/cinzel_regular.ttf"
+    },
+    {
+        "merged": "com.artmondo.boxters.app-debug-44:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.artmondo.boxters.app-main-46:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    }
+]
