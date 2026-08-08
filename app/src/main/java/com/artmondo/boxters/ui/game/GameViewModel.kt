@@ -322,6 +322,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 val pixel = HexMath.axialToPixel(coord.q, coord.r, hexSize)
                 particleSystem.emitClearEffect(center.x + pixel.x, center.y + pixel.y)
             }
+            // Recheck objectives after auto-clear may have cleared remaining cells
+            if (autoCleared.isNotEmpty()) {
+                objectiveTracker?.checkAll(b, lastMove)
+            }
         }
 
         // Show score feedback
@@ -715,7 +719,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             canGoForward = run {
                 val highestReached = profile?.highestLevels?.get(currentMode.id) ?: 0
                 currentLevelIndex < highestReached && b.moveHistory.isEmpty()
-            }
+            },
+            tracePath = emptyList(),
+            traceWord = "",
+            traceValidation = TraceValidation.NONE,
+            solutionWords = emptyList(),
+            highlightedSolutionPath = null
         )
     }
 

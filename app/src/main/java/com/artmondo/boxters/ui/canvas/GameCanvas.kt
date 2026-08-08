@@ -831,15 +831,27 @@ private fun DrawScope.drawHud(
     )
     drawText(soundText, topLeft = Offset(soundX - soundText.size.width / 2f, soundY - soundText.size.height / 2f))
 
-    // Logout
+    // Logout (exit door icon)
     val logoutX = size.width - rightPadding
     val logoutY = topPadding + 8 * density
     drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(logoutX, logoutY))
-    val logoutText = textMeasurer.measure(
-        AnnotatedString("✕"),
-        style = TextStyle(fontSize = 20.sp, color = GameColors.uiText)
-    )
-    drawText(logoutText, topLeft = Offset(logoutX - logoutText.size.width / 2f, logoutY - logoutText.size.height / 2f))
+    val exitStroke = Stroke(width = 2f * density, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    val exitSize = 8f * density
+    // Door frame (rectangle, open on right side)
+    val doorPath = Path().apply {
+        moveTo(logoutX + exitSize * 0.3f, logoutY - exitSize)
+        lineTo(logoutX - exitSize, logoutY - exitSize)
+        lineTo(logoutX - exitSize, logoutY + exitSize)
+        lineTo(logoutX + exitSize * 0.3f, logoutY + exitSize)
+    }
+    drawPath(doorPath, GameColors.uiText, style = exitStroke)
+    // Arrow pointing right (exit direction)
+    val arrowStartX = logoutX - exitSize * 0.2f
+    val arrowEndX = logoutX + exitSize
+    drawLine(GameColors.uiText, Offset(arrowStartX, logoutY), Offset(arrowEndX, logoutY), strokeWidth = 2f * density, cap = StrokeCap.Round)
+    val arrowHead = 4f * density
+    drawLine(GameColors.uiText, Offset(arrowEndX, logoutY), Offset(arrowEndX - arrowHead, logoutY - arrowHead), strokeWidth = 2f * density, cap = StrokeCap.Round)
+    drawLine(GameColors.uiText, Offset(arrowEndX, logoutY), Offset(arrowEndX - arrowHead, logoutY + arrowHead), strokeWidth = 2f * density, cap = StrokeCap.Round)
 
     // Bottom buttons: navigation arrows + share
     val navBottomY = size.height - 160 * density

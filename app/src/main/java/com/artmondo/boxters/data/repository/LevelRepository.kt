@@ -158,10 +158,10 @@ object LevelRepository {
 
         LevelData(
             id = "simple_10",
-            name = "Proving Ground",
+            name = "Sharp Focus",
             mode = "simple",
             tier = "simple",
-            maxMoves = 6,
+            maxMoves = 7,
             twoStarTarget = 190,
             threeStarTarget = 280,
             layout = LayoutDef(shape = "hex3", anchors = 2),
@@ -169,15 +169,15 @@ object LevelRepository {
                 ObjectiveDef(type = "formWord", description = "Form 3 words of 5+ letters", target = 3, params = mapOf("minLength" to 5)),
                 ObjectiveDef(type = "illuminateAnchors", description = "Must use both Anchors (use each in a word)", target = 2)
             ),
-            tutorial = TutorialDef("Fewer moves means every word counts. Aim for 5+ letters on each move.")
+            tutorial = TutorialDef("Don't waste moves on guesses. Invalid words still cost a move!")
         ),
 
         LevelData(
             id = "simple_11",
-            name = "Sharp Focus",
+            name = "Proving Ground",
             mode = "simple",
             tier = "simple",
-            maxMoves = 7,
+            maxMoves = 6,
             twoStarTarget = 200,
             threeStarTarget = 300,
             layout = LayoutDef(shape = "hex3", anchors = 2),
@@ -185,7 +185,7 @@ object LevelRepository {
                 ObjectiveDef(type = "formWord", description = "Form 3 words of 5+ letters", target = 3, params = mapOf("minLength" to 5)),
                 ObjectiveDef(type = "illuminateAnchors", description = "Must use both Anchors (use each in a word)", target = 2)
             ),
-            tutorial = TutorialDef("Don't waste moves on guesses. Invalid words still cost a move!")
+            tutorial = TutorialDef("Fewer moves means every word counts. Aim for 5+ letters on each move.")
         ),
 
         LevelData(
