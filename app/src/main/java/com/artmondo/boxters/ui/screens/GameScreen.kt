@@ -24,6 +24,7 @@ fun GameScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    var showInfoDialog by remember { mutableStateOf(false) }
 
     // Save board state when app goes to background
     DisposableEffect(lifecycleOwner) {
@@ -81,7 +82,9 @@ fun GameScreen(
                     WelcomeScreen(
                         uiState = uiState,
                         onModeSelected = viewModel::onModeSelected,
-                        onPlay = viewModel::onPlayClicked
+                        onPlay = viewModel::onPlayClicked,
+                        onToggleSound = viewModel::onToggleSound,
+                        onInfoClicked = { showInfoDialog = true }
                     )
                 }
             }
@@ -96,6 +99,7 @@ fun GameScreen(
                     onDefeatContinue = viewModel::onDefeatContinue,
                     onCooldownTapped = viewModel::onCooldownTapped,
                     onToggleSound = viewModel::onToggleSound,
+                    onInfoClicked = { showInfoDialog = true },
                     onLogout = viewModel::onLogout,
                     onShare = viewModel::onShareBoard,
                     onNavigateLevel = viewModel::onNavigateLevel,
@@ -103,6 +107,10 @@ fun GameScreen(
                     onFrame = viewModel::onFrame
                 )
             }
+        }
+
+        if (showInfoDialog) {
+            InfoDialog(onDismiss = { showInfoDialog = false })
         }
     }
 }

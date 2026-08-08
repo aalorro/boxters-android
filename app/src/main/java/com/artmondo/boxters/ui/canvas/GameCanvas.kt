@@ -44,6 +44,7 @@ fun GameCanvas(
     onDefeatContinue: () -> Unit,
     onCooldownTapped: () -> Unit,
     onToggleSound: () -> Unit,
+    onInfoClicked: () -> Unit,
     onLogout: () -> Unit,
     onShare: () -> Unit,
     onNavigateLevel: (Int) -> Unit,
@@ -83,7 +84,7 @@ fun GameCanvas(
                     canvasSize.height / density.density
                 ) * density.density
             }
-            boardCenter = Offset(canvasSize.width / 2f, canvasSize.height * 0.43f)
+            boardCenter = Offset(canvasSize.width / 2f, canvasSize.height * 0.5f)
         }
     }
 
@@ -99,40 +100,50 @@ fun GameCanvas(
 
                             // Check button hits first
                             val pos = down.position
-                            val buttonRadius = 20.dp.toPx()
+                            val buttonRadius = 28.dp.toPx()
+
+                            // Info button (top-right area, leftmost)
+                            val infoBtnPos = Offset(canvasSize.width - 100.dp.toPx(), 44.dp.toPx())
+                            if ((pos - infoBtnPos).getDistance() < buttonRadius) {
+                                onInfoClicked()
+                                return@awaitEachGesture
+                            }
 
                             // Sound button (top-right area)
-                            val soundBtnPos = Offset(canvasSize.width - 50.dp.toPx(), 50.dp.toPx())
+                            val soundBtnPos = Offset(canvasSize.width - 60.dp.toPx(), 44.dp.toPx())
                             if ((pos - soundBtnPos).getDistance() < buttonRadius) {
                                 onToggleSound()
                                 return@awaitEachGesture
                             }
 
                             // Logout button
-                            val logoutPos = Offset(canvasSize.width - 20.dp.toPx(), 50.dp.toPx())
+                            val logoutPos = Offset(canvasSize.width - 20.dp.toPx(), 44.dp.toPx())
                             if ((pos - logoutPos).getDistance() < buttonRadius) {
                                 onLogout()
                                 return@awaitEachGesture
                             }
 
+                            // Bottom nav buttons
+                            val navY = canvasSize.height - 160.dp.toPx()
+                            val navHitRadius = 30.dp.toPx()
+
                             // Share button
-                            val sharePos = Offset(canvasSize.width - 30.dp.toPx(), canvasSize.height - 108.dp.toPx())
-                            if ((pos - sharePos).getDistance() < buttonRadius) {
+                            val sharePos = Offset(canvasSize.width - 36.dp.toPx(), navY)
+                            if ((pos - sharePos).getDistance() < navHitRadius) {
                                 onShare()
                                 return@awaitEachGesture
                             }
 
                             // Back arrow (left side)
-                            val navY = canvasSize.height - 108.dp.toPx()
-                            val backPos = Offset(30.dp.toPx(), navY)
-                            if ((pos - backPos).getDistance() < buttonRadius) {
+                            val backPos = Offset(36.dp.toPx(), navY)
+                            if ((pos - backPos).getDistance() < navHitRadius) {
                                 onNavigateLevel(-1)
                                 return@awaitEachGesture
                             }
 
                             // Forward arrow (right of back)
-                            val fwdPos = Offset(70.dp.toPx(), navY)
-                            if ((pos - fwdPos).getDistance() < buttonRadius) {
+                            val fwdPos = Offset(100.dp.toPx(), navY)
+                            if ((pos - fwdPos).getDistance() < navHitRadius) {
                                 onNavigateLevel(1)
                                 return@awaitEachGesture
                             }
@@ -374,11 +385,27 @@ fun GameCanvas(
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(GameColors.uiPanel, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                    .padding(20.dp),
+                    .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Defeat title — positioned just above the modal
+                Text(
+                    text = if (uiState.gameState == GameState.GAME_OVER) "Game Over" else "Out of Moves",
+                    style = GameTypography.levelName.copy(
+                        fontSize = 31.sp,
+                        color = GameColors.uiError
+                    ),
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                // Modal panel
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(GameColors.uiPanel, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                 Text(
                     text = "Words You Could Have Played",
                     style = GameTypography.levelName.copy(fontSize = 21.sp)
@@ -420,6 +447,7 @@ fun GameCanvas(
                             "Retry Level" else "Continue (${uiState.lives} lives left)",
                         style = GameTypography.button
                     )
+                }
                 }
             }
         }
@@ -772,63 +800,75 @@ private fun DrawScope.drawHud(
         }
     }
 
-    // Canvas buttons (sound toggle, logout)
-    val btnRadius = 18f * density
+    // Canvas buttons (info, sound toggle, logout)
+    val btnRadius = 22f * density
     val rightPadding = 20f * density
+
+    // Info button
+    val infoX = size.width - rightPadding - btnRadius * 6
+    val infoY = topPadding + 8 * density
+    drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(infoX, infoY))
+    val infoText = textMeasurer.measure(
+        AnnotatedString("i"),
+        style = TextStyle(fontFamily = CinzelFontFamily, fontWeight = FontWeight.Bold,
+            fontSize = 18.sp, color = GameColors.uiAccent)
+    )
+    drawText(infoText, topLeft = Offset(infoX - infoText.size.width / 2f, infoY - infoText.size.height / 2f))
 
     // Sound toggle
     val soundX = size.width - rightPadding - btnRadius * 3
-    val soundY = topPadding + 4 * density
+    val soundY = topPadding + 8 * density
     drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(soundX, soundY))
     val soundText = textMeasurer.measure(
-        AnnotatedString(if (uiState.audioEnabled) "♪" else "✕"),
-        style = TextStyle(fontSize = 16.sp, color = GameColors.uiText)
+        AnnotatedString(if (uiState.audioEnabled) "\uD83D\uDD0A" else "\uD83D\uDD07"),
+        style = TextStyle(fontSize = 20.sp, color = GameColors.uiText)
     )
     drawText(soundText, topLeft = Offset(soundX - soundText.size.width / 2f, soundY - soundText.size.height / 2f))
 
     // Logout
     val logoutX = size.width - rightPadding
-    val logoutY = topPadding + 4 * density
+    val logoutY = topPadding + 8 * density
     drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(logoutX, logoutY))
     val logoutText = textMeasurer.measure(
         AnnotatedString("✕"),
-        style = TextStyle(fontSize = 18.sp, color = GameColors.uiText)
+        style = TextStyle(fontSize = 20.sp, color = GameColors.uiText)
     )
     drawText(logoutText, topLeft = Offset(logoutX - logoutText.size.width / 2f, logoutY - logoutText.size.height / 2f))
 
     // Bottom buttons: navigation arrows + share
-    val bottomY = size.height - 108 * density
+    val navBottomY = size.height - 160 * density
+    val navBtnRadius = 27f * density
 
     // Back arrow
     if (uiState.canGoBack) {
-        val backX = 30f * density
-        drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(backX, bottomY))
+        val backX = 36f * density
+        drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(backX, navBottomY))
         val backText = textMeasurer.measure(
             AnnotatedString("◀"),
-            style = TextStyle(fontSize = 16.sp, color = GameColors.uiText)
+            style = TextStyle(fontSize = 24.sp, color = GameColors.uiText)
         )
-        drawText(backText, topLeft = Offset(backX - backText.size.width / 2f, bottomY - backText.size.height / 2f))
+        drawText(backText, topLeft = Offset(backX - backText.size.width / 2f, navBottomY - backText.size.height / 2f))
     }
 
     // Forward arrow
     if (uiState.canGoForward) {
-        val fwdX = 70f * density
-        drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(fwdX, bottomY))
+        val fwdX = 100f * density
+        drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(fwdX, navBottomY))
         val fwdText = textMeasurer.measure(
             AnnotatedString("▶"),
-            style = TextStyle(fontSize = 16.sp, color = GameColors.uiText)
+            style = TextStyle(fontSize = 24.sp, color = GameColors.uiText)
         )
-        drawText(fwdText, topLeft = Offset(fwdX - fwdText.size.width / 2f, bottomY - fwdText.size.height / 2f))
+        drawText(fwdText, topLeft = Offset(fwdX - fwdText.size.width / 2f, navBottomY - fwdText.size.height / 2f))
     }
 
     // Share button
-    val shareX = size.width - 30f * density
-    drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(shareX, bottomY))
+    val shareX = size.width - 36f * density
+    drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(shareX, navBottomY))
     val shareText = textMeasurer.measure(
         AnnotatedString("↗"),
-        style = TextStyle(fontSize = 18.sp, color = GameColors.uiAccent)
+        style = TextStyle(fontSize = 24.sp, color = GameColors.uiAccent)
     )
-    drawText(shareText, topLeft = Offset(shareX - shareText.size.width / 2f, bottomY - shareText.size.height / 2f))
+    drawText(shareText, topLeft = Offset(shareX - shareText.size.width / 2f, navBottomY - shareText.size.height / 2f))
 }
 
 private fun DrawScope.drawVictoryOverlay(
@@ -908,19 +948,6 @@ private fun DrawScope.drawDefeatOverlay(
 ) {
     val alpha = if (uiState.gameState == GameState.GAME_OVER) 0.5f else 0.45f
     drawRect(Color.Black.copy(alpha = alpha))
-
-    val centerX = size.width / 2f
-    val titleY = 50f * density
-    val titleText = textMeasurer.measure(
-        AnnotatedString(if (uiState.gameState == GameState.GAME_OVER) "Game Over" else "Out of Moves"),
-        style = TextStyle(
-            fontFamily = CinzelFontFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize = 31.sp,
-            color = GameColors.uiError
-        )
-    )
-    drawText(titleText, topLeft = Offset(centerX - titleText.size.width / 2f, titleY))
 }
 
 private fun DrawScope.drawCooldownOverlay(

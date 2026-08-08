@@ -10,7 +10,7 @@ object BoardGenerator {
     fun generateBoard(
         levelData: LevelData,
         dictionary: Dictionary,
-        sessionSeed: Int
+        seed: Int
     ): Board {
         val board = Board()
         board.mode = levelData.mode
@@ -25,7 +25,7 @@ object BoardGenerator {
             board.field.addCell(HexCell(q = coord.q, r = coord.r))
         }
 
-        val rng = SeededRNG(SeededRNG.seedForLevel(sessionSeed, 0))
+        val rng = SeededRNG(seed)
 
         // Place anchors
         if (levelData.layout.anchors > 0) {

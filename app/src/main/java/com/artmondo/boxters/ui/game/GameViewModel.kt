@@ -46,8 +46,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private var currentMode = GameMode.SIMPLE
     private var currentLevelIndex = 0
     private var levelScore = 0
-    private var sessionSeed = (System.currentTimeMillis() xor (Math.random() * 0xFFFFFFFFL).toLong()).toInt()
-
     private var feedbackTimer = 0f
     private var victoryDelayTimer = 0f
     private var isVictoryClickable = false
@@ -154,8 +152,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         // Try to restore saved board state
         if (tryRestoreBoard()) return
 
-        // Generate board
-        val newBoard = BoardGenerator.generateBoard(levelData, dictionary, sessionSeed)
+        // Generate board with a unique seed each time
+        val levelSeed = SeededRNG.seedForLevel(
+            (System.currentTimeMillis() xor (Math.random() * 0xFFFFFFFFL).toLong()).toInt(),
+            levelIndex
+        )
+        val newBoard = BoardGenerator.generateBoard(levelData, dictionary, levelSeed)
         board = newBoard
 
         // Init tracer
@@ -257,12 +259,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        // Check minimum word length from objectives
+        // Enforce minimum word length from active objectives
         val minLenFromObj = objectiveTracker?.allObjectives
             ?.filter { (it.type == "formWord" || it.type == "formWordLength") && !it.completed }
             ?.mapNotNull { it.params["minLength"] }
             ?.minOrNull()
-        // Don't enforce objective min length as a hard requirement — any 3+ letter word is valid
+        if (minLenFromObj != null && word.length < minLenFromObj) {
+            showFeedback("Words must be at least $minLenFromObj letters!")
+            return
+        }
 
         // Check anchor constraint
         val hasAnchors = b.field.getAllCells().any { it.isAnchor }
@@ -449,6 +454,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val b = board ?: return
         val p = profile ?: return
 
+        // Clear saved board — defeat means this board is done
+        playerRepository.clearBoardSnapshot(currentMode.id)
+
         // Find solution words
         val solutions = b.field.findWordsWithPaths(dictionary, Gameplay.MAX_SOLUTION_WORDS)
         val solutionWords = solutions.map { SolutionWord(it.word, it.path) }
@@ -497,6 +505,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onDefeatContinue() {
         val p = profile ?: return
+
+        // Clear saved board so retry gets a fresh board
+        playerRepository.clearBoardSnapshot(currentMode.id)
 
         if (p.lives <= 0) {
             // Start cooldown

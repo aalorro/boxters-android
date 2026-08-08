@@ -22,7 +22,9 @@ import com.artmondo.boxters.ui.theme.*
 fun WelcomeScreen(
     uiState: GameUiState,
     onModeSelected: (GameMode) -> Unit,
-    onPlay: () -> Unit
+    onPlay: () -> Unit,
+    onToggleSound: () -> Unit,
+    onInfoClicked: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -35,6 +37,41 @@ fun WelcomeScreen(
             ),
         contentAlignment = Alignment.Center
     ) {
+        // Top-right buttons: Info + Sound toggle
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 16.dp, end = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Info button
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(GameColors.uiPanel, RoundedCornerShape(22.dp))
+                    .clickable { onInfoClicked() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "i",
+                    style = GameTypography.levelName.copy(fontSize = 20.sp, color = GameColors.uiAccent)
+                )
+            }
+            // Sound toggle
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(GameColors.uiPanel, RoundedCornerShape(22.dp))
+                    .clickable { onToggleSound() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (uiState.audioEnabled) "\uD83D\uDD0A" else "\uD83D\uDD07",
+                    fontSize = 20.sp
+                )
+            }
+        }
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(24.dp)
