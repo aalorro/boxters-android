@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">Boxters</string>
-    <style name="Theme.Boxters" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@android:color/black</item>
-        <item name="android:statusBarColor">#FF050520</item>
-        <item name="android:navigationBarColor">#FF050520</item>
-    </style>
-</resources>
