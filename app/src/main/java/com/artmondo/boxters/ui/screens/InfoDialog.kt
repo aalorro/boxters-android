@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -20,6 +21,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.artmondo.boxters.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 
 private enum class InfoTab(val label: String) {
     ABOUT("About"),
@@ -245,25 +251,143 @@ private fun PrivacyContent() {
     }
 }
 
+private enum class FormStatus { IDLE, SENDING, SUCCESS, ERROR }
+
 @Composable
 private fun ContactContent() {
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("") }
+    var status by remember { mutableStateOf(FormStatus.IDLE) }
+    var errorMessage by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        unfocusedTextColor = GameColors.uiText,
+        focusedTextColor = GameColors.uiText,
+        cursorColor = GameColors.uiAccent,
+        unfocusedBorderColor = GameColors.uiPanelBorder,
+        focusedBorderColor = GameColors.uiAccent,
+        unfocusedLabelColor = GameColors.uiTextDim,
+        focusedLabelColor = GameColors.uiAccent,
+        unfocusedContainerColor = GameColors.backgroundMid,
+        focusedContainerColor = GameColors.backgroundMid
+    )
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         InfoHeader("Contact Us")
-
         InfoText("Report a bug, suggest a word for the dictionary, share feature ideas, or send us feedback.")
 
-        InfoText("Email us at:")
-        Text(
-            text = "hello@artmondo.com",
-            style = GameTypography.body.copy(
-                color = GameColors.uiAccent,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Name") },
+            singleLine = true,
+            enabled = status != FormStatus.SENDING,
+            colors = fieldColors,
+            textStyle = GameTypography.body.copy(fontSize = 14.sp),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-        InfoText("Think a word should be in the dictionary? Let us know!")
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            singleLine = true,
+            enabled = status != FormStatus.SENDING,
+            colors = fieldColors,
+            textStyle = GameTypography.body.copy(fontSize = 14.sp),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = message,
+            onValueChange = { message = it },
+            label = { Text("Message") },
+            minLines = 4,
+            maxLines = 6,
+            enabled = status != FormStatus.SENDING,
+            colors = fieldColors,
+            textStyle = GameTypography.body.copy(fontSize = 14.sp),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Button(
+            onClick = {
+                status = FormStatus.SENDING
+                scope.launch {
+                    try {
+                        val success = submitContactForm(name, email, message)
+                        if (success) {
+                            status = FormStatus.SUCCESS
+                            name = ""
+                            email = ""
+                            message = ""
+                        } else {
+                            status = FormStatus.ERROR
+                            errorMessage = "Failed to send. Please try again."
+                        }
+                    } catch (e: Exception) {
+                        status = FormStatus.ERROR
+                        errorMessage = "Network error. Check your connection."
+                    }
+                }
+            },
+            enabled = status != FormStatus.SENDING && message.isNotBlank(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = GameColors.uiAccent,
+                contentColor = GameColors.backgroundDark,
+                disabledContainerColor = GameColors.uiPanel,
+                disabledContentColor = GameColors.uiTextDim
+            ),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth().height(48.dp)
+        ) {
+            if (status == FormStatus.SENDING) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = GameColors.backgroundDark,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Send", style = GameTypography.modeBadge)
+            }
+        }
+
+        when (status) {
+            FormStatus.SUCCESS -> InfoText("Message sent! We'll get back to you soon.", color = GameColors.uiSuccess)
+            FormStatus.ERROR -> InfoText(errorMessage, color = GameColors.uiError)
+            else -> {}
+        }
+    }
+}
+
+private suspend fun submitContactForm(name: String, email: String, message: String): Boolean {
+    return withContext(Dispatchers.IO) {
+        val url = URL("https://formspree.io/f/mgawvrkq")
+        val conn = url.openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.setRequestProperty("Accept", "application/json")
+            conn.doOutput = true
+
+            val jsonBody = buildString {
+                append("{")
+                append("\"name\":\"${name.replace("\"", "\\\"")}\"")
+                append(",\"email\":\"${email.replace("\"", "\\\"")}\"")
+                append(",\"message\":\"${message.replace("\"", "\\\"").replace("\n", "\\n")}\"")
+                append("}")
+            }
+
+            conn.outputStream.use { it.write(jsonBody.toByteArray()) }
+            conn.responseCode in 200..299
+        } finally {
+            conn.disconnect()
+        }
     }
 }
 

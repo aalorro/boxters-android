@@ -142,15 +142,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         startLevel(currentLevelIndex)
     }
 
-    private fun startLevel(levelIndex: Int) {
+    private fun startLevel(levelIndex: Int, forceNew: Boolean = false) {
         val absoluteIndex = LevelRepository.getFirstLevelForMode(currentMode.id) + levelIndex
         val levelData = LevelRepository.getLevel(absoluteIndex) ?: return
 
         currentLevelIndex = levelIndex
         levelScore = 0
 
-        // Try to restore saved board state
-        if (tryRestoreBoard()) return
+        // Try to restore saved board state (only when resuming a session)
+        if (!forceNew && tryRestoreBoard()) return
 
         // Generate board with a unique seed each time
         val levelSeed = SeededRNG.seedForLevel(
@@ -338,6 +338,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         // Check defeat
         checkDefeat()
+        if (gameState != GameState.PLAYING) return
 
         // Save board state after each word
         saveBoardState()
@@ -499,7 +500,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             // Return to menu
             returnToMenu()
         } else {
-            startLevel(nextLevel)
+            startLevel(nextLevel, forceNew = true)
         }
     }
 
@@ -518,7 +519,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             )
         } else {
             // Retry the same level
-            startLevel(currentLevelIndex)
+            startLevel(currentLevelIndex, forceNew = true)
         }
     }
 
@@ -532,7 +533,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         playerRepository.saveProfile(p)
 
         // Restart level
-        startLevel(currentLevelIndex)
+        startLevel(currentLevelIndex, forceNew = true)
     }
 
     fun onSolutionWordSelected(path: List<HexCoord>) {
@@ -565,7 +566,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val maxAllowed = minOf(highestReached, Gameplay.LEVELS_PER_MODE - 1)
         val newLevel = (currentLevelIndex + delta).coerceIn(0, maxAllowed)
         if (newLevel != currentLevelIndex) {
-            startLevel(newLevel)
+            startLevel(newLevel, forceNew = true)
         }
     }
 

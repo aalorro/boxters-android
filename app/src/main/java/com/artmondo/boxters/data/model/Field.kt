@@ -29,9 +29,10 @@ class Field {
         val results = mutableListOf<WordWithPath>()
         val seen = mutableSetOf<String>()
         val allCells = cells.values.filter { it.letter != null && it.isActive }
+        val anchorKeys = cells.values.filter { it.isAnchor }.map { it.key }.toSet()
 
         for (startCell in allCells) {
-            traceWordsWithPaths(startCell, mutableListOf(startCell), dictionary, results, seen)
+            traceWordsWithPaths(startCell, mutableListOf(startCell), dictionary, results, seen, anchorKeys)
         }
 
         results.sortByDescending { it.word.length }
@@ -85,12 +86,16 @@ class Field {
         path: MutableList<HexCell>,
         dictionary: Dictionary,
         found: MutableList<WordWithPath>,
-        seen: MutableSet<String>
+        seen: MutableSet<String>,
+        anchorKeys: Set<String>
     ) {
         val word = path.map { it.letter }.joinToString("")
         if (word.length >= 3 && dictionary.isWord(word) && word !in seen) {
-            seen.add(word)
-            found.add(WordWithPath(word, path.map { HexCoord(it.q, it.r) }))
+            // If board has anchors, only include words that pass through one
+            if (anchorKeys.isEmpty() || path.any { it.key in anchorKeys }) {
+                seen.add(word)
+                found.add(WordWithPath(word, path.map { HexCoord(it.q, it.r) }))
+            }
         }
         if (word.length >= 8 || !dictionary.isPrefix(word)) return
 
@@ -98,7 +103,7 @@ class Field {
         for (next in neighbors) {
             if (next.letter != null && next.isActive && next !in path) {
                 path.add(next)
-                traceWordsWithPaths(next, path, dictionary, found, seen)
+                traceWordsWithPaths(next, path, dictionary, found, seen, anchorKeys)
                 path.removeAt(path.lastIndex)
             }
         }

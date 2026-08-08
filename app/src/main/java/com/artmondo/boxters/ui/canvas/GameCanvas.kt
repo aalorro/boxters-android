@@ -101,23 +101,24 @@ fun GameCanvas(
                             // Check button hits first
                             val pos = down.position
                             val buttonRadius = 28.dp.toPx()
+                            val btnY = 58.dp.toPx()
 
                             // Info button (top-right area, leftmost)
-                            val infoBtnPos = Offset(canvasSize.width - 100.dp.toPx(), 44.dp.toPx())
+                            val infoBtnPos = Offset(canvasSize.width - 152.dp.toPx(), btnY)
                             if ((pos - infoBtnPos).getDistance() < buttonRadius) {
                                 onInfoClicked()
                                 return@awaitEachGesture
                             }
 
                             // Sound button (top-right area)
-                            val soundBtnPos = Offset(canvasSize.width - 60.dp.toPx(), 44.dp.toPx())
+                            val soundBtnPos = Offset(canvasSize.width - 86.dp.toPx(), btnY)
                             if ((pos - soundBtnPos).getDistance() < buttonRadius) {
                                 onToggleSound()
                                 return@awaitEachGesture
                             }
 
                             // Logout button
-                            val logoutPos = Offset(canvasSize.width - 20.dp.toPx(), 44.dp.toPx())
+                            val logoutPos = Offset(canvasSize.width - 20.dp.toPx(), btnY)
                             if ((pos - logoutPos).getDistance() < buttonRadius) {
                                 onLogout()
                                 return@awaitEachGesture
@@ -808,12 +809,17 @@ private fun DrawScope.drawHud(
     val infoX = size.width - rightPadding - btnRadius * 6
     val infoY = topPadding + 8 * density
     drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(infoX, infoY))
-    val infoText = textMeasurer.measure(
-        AnnotatedString("i"),
-        style = TextStyle(fontFamily = CinzelFontFamily, fontWeight = FontWeight.Bold,
-            fontSize = 18.sp, color = GameColors.uiAccent)
+    drawCircle(GameColors.uiAccent.copy(alpha = 0.5f), radius = btnRadius, center = Offset(infoX, infoY),
+        style = Stroke(width = 1.5f * density))
+    // "i" dot
+    drawCircle(GameColors.uiAccent, radius = 2.5f * density, center = Offset(infoX, infoY - 7f * density))
+    // "i" body
+    drawRoundRect(
+        color = GameColors.uiAccent,
+        topLeft = Offset(infoX - 2f * density, infoY - 2f * density),
+        size = Size(4f * density, 12f * density),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5f * density)
     )
-    drawText(infoText, topLeft = Offset(infoX - infoText.size.width / 2f, infoY - infoText.size.height / 2f))
 
     // Sound toggle
     val soundX = size.width - rightPadding - btnRadius * 3
@@ -864,11 +870,24 @@ private fun DrawScope.drawHud(
     // Share button
     val shareX = size.width - 36f * density
     drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(shareX, navBottomY))
-    val shareText = textMeasurer.measure(
-        AnnotatedString("↗"),
-        style = TextStyle(fontSize = 24.sp, color = GameColors.uiAccent)
-    )
-    drawText(shareText, topLeft = Offset(shareX - shareText.size.width / 2f, navBottomY - shareText.size.height / 2f))
+    drawCircle(GameColors.uiAccent.copy(alpha = 0.5f), radius = navBtnRadius, center = Offset(shareX, navBottomY),
+        style = Stroke(width = 1.5f * density))
+    val sharePaint = Stroke(width = 2.5f * density, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    val shareIconSize = 9f * density
+    // Tray (open-top box)
+    val trayPath = Path().apply {
+        moveTo(shareX - shareIconSize, navBottomY - 2f * density)
+        lineTo(shareX - shareIconSize, navBottomY + shareIconSize)
+        lineTo(shareX + shareIconSize, navBottomY + shareIconSize)
+        lineTo(shareX + shareIconSize, navBottomY - 2f * density)
+    }
+    drawPath(trayPath, GameColors.uiAccent, style = sharePaint)
+    // Upward arrow
+    val arrowTop = navBottomY - shareIconSize
+    drawLine(GameColors.uiAccent, Offset(shareX, navBottomY + 2f * density), Offset(shareX, arrowTop), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
+    val arrowHeadSize = 5f * density
+    drawLine(GameColors.uiAccent, Offset(shareX, arrowTop), Offset(shareX - arrowHeadSize, arrowTop + arrowHeadSize), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
+    drawLine(GameColors.uiAccent, Offset(shareX, arrowTop), Offset(shareX + arrowHeadSize, arrowTop + arrowHeadSize), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
 }
 
 private fun DrawScope.drawVictoryOverlay(

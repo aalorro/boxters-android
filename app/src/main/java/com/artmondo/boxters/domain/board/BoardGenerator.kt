@@ -96,20 +96,23 @@ object BoardGenerator {
         }
         val shuffled = shuffleWith(candidates, rng)
 
+        val anchors = board.field.getAllCells().filter { it.isAnchor }
+        val hasAnchors = anchors.isNotEmpty()
+
         var placed = 0
         for (word in shuffled) {
             if (placed >= wordCount) break
-            if (placeWordOnGrid(board, word, rng)) {
-                placed++
-            }
-        }
-
-        // Ensure anchors are covered
-        val anchors = board.field.getAllCells().filter { it.isAnchor && it.letter == null }
-        for (anchor in anchors) {
-            val anchorWords = shuffleWith(candidates.filter { it.length in 3..6 }, rng)
-            for (word in anchorWords.take(20)) {
-                if (placeWordThroughCell(board, word, anchor, rng)) break
+            if (hasAnchors) {
+                // Every word must route through an anchor cell
+                val shuffledAnchors = shuffleWith(anchors, rng)
+                val success = shuffledAnchors.any { anchor ->
+                    placeWordThroughCell(board, word, anchor, rng)
+                }
+                if (success) placed++
+            } else {
+                if (placeWordOnGrid(board, word, rng)) {
+                    placed++
+                }
             }
         }
 

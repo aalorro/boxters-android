@@ -1,5 +1,6 @@
 package com.artmondo.boxters.ui.screens
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,7 +11,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,13 +53,23 @@ fun WelcomeScreen(
                 modifier = Modifier
                     .size(44.dp)
                     .background(GameColors.uiPanel, RoundedCornerShape(22.dp))
+                    .border(1.dp, GameColors.uiAccent.copy(alpha = 0.5f), RoundedCornerShape(22.dp))
                     .clickable { onInfoClicked() },
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "i",
-                    style = GameTypography.levelName.copy(fontSize = 20.sp, color = GameColors.uiAccent)
-                )
+                Canvas(modifier = Modifier.size(24.dp)) {
+                    val cx = size.width / 2f
+                    val cy = size.height / 2f
+                    // "i" dot
+                    drawCircle(GameColors.uiAccent, radius = 2.5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(cx, cy - 7.dp.toPx()))
+                    // "i" body
+                    drawRoundRect(
+                        color = GameColors.uiAccent,
+                        topLeft = androidx.compose.ui.geometry.Offset(cx - 2.dp.toPx(), cy - 2.dp.toPx()),
+                        size = Size(4.dp.toPx(), 12.dp.toPx()),
+                        cornerRadius = CornerRadius(1.5.dp.toPx())
+                    )
+                }
             }
             // Sound toggle
             Box(
@@ -103,6 +117,7 @@ fun WelcomeScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth()
             ) {
+                StatItem("Total\nScore", uiState.totalScore.toString())
                 StatItem("Games\nPlayed", uiState.playerStats?.gamesPlayed?.toString() ?: "0")
                 StatItem("Levels\nCompleted", uiState.playerStats?.levelsCompleted?.toString() ?: "0")
                 StatItem("Best\nScore", uiState.playerStats?.bestScore?.toString() ?: "0")
