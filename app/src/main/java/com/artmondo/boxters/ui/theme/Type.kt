@@ -52,29 +52,29 @@ object GameTypography {
     val wordTray = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Bold,
-        fontSize = 27.sp
+        fontSize = 35.sp
     )
     val tutorial = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
+        fontSize = 18.sp,
         color = GameColors.uiText
     )
     val objective = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
+        fontSize = 18.sp,
         color = GameColors.uiText
     )
     val button = TextStyle(
         fontFamily = CinzelFontFamily,
         fontWeight = FontWeight.Bold,
-        fontSize = 16.sp
+        fontSize = 21.sp
     )
     val body = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
+        fontSize = 18.sp,
         color = GameColors.uiText
     )
     val statValue = TextStyle(

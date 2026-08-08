@@ -55,7 +55,7 @@ fun GameCanvas(
 
     var canvasSize by remember { mutableStateOf(Size.Zero) }
     var boardCenter by remember { mutableStateOf(Offset.Zero) }
-    var hexSize by remember { mutableFloatStateOf(47f) }
+    var hexSize by remember { mutableFloatStateOf(61f) }
     var time by remember { mutableFloatStateOf(0f) }
 
     // Animation loop
@@ -318,8 +318,8 @@ fun GameCanvas(
                         Text(
                             text = if (obj.completed) "✓" else "○",
                             color = if (obj.completed) GameColors.uiSuccess else GameColors.uiTextDim,
-                            fontSize = 14.sp,
-                            modifier = Modifier.width(20.dp)
+                            fontSize = 18.sp,
+                            modifier = Modifier.width(24.dp)
                         )
                         Text(
                             text = obj.description,
@@ -333,7 +333,7 @@ fun GameCanvas(
                             Text(
                                 text = "${obj.progress}/${obj.target}",
                                 style = GameTypography.objective.copy(color = GameColors.uiAccent),
-                                fontSize = 12.sp
+                                fontSize = 16.sp
                             )
                         }
                     }
@@ -354,7 +354,7 @@ fun GameCanvas(
                             text = "${index + 1}.$word",
                             style = GameTypography.objective.copy(
                                 color = GameColors.uiAccent,
-                                fontSize = 12.sp,
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
                             modifier = Modifier
@@ -381,7 +381,7 @@ fun GameCanvas(
             ) {
                 Text(
                     text = "Words You Could Have Played",
-                    style = GameTypography.levelName.copy(fontSize = 16.sp)
+                    style = GameTypography.levelName.copy(fontSize = 21.sp)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -603,7 +603,7 @@ private fun DrawScope.drawHud(
         style = TextStyle(
             fontFamily = CinzelFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
+            fontSize = 23.sp,
             color = GameColors.uiAccent
         )
     )
@@ -622,7 +622,7 @@ private fun DrawScope.drawHud(
         style = TextStyle(
             fontFamily = InterFontFamily,
             fontWeight = FontWeight.SemiBold,
-            fontSize = 14.sp,
+            fontSize = 18.sp,
             color = modeAccent
         )
     )
@@ -639,7 +639,7 @@ private fun DrawScope.drawHud(
     }
     val heartsText = textMeasurer.measure(
         AnnotatedString(hearts),
-        style = TextStyle(fontSize = 16.sp, color = GameColors.uiError)
+        style = TextStyle(fontSize = 21.sp, color = GameColors.uiError)
     )
     drawText(heartsText, topLeft = Offset(centerX - 120 * density, statsY))
 
@@ -649,7 +649,7 @@ private fun DrawScope.drawHud(
         style = TextStyle(
             fontFamily = CinzelFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
+            fontSize = 26.sp,
             color = if (uiState.movesRemaining <= 2) GameColors.uiWarning else GameColors.uiText
         )
     )
@@ -657,24 +657,50 @@ private fun DrawScope.drawHud(
 
     val movesLabel = textMeasurer.measure(
         AnnotatedString("moves"),
-        style = TextStyle(fontSize = 10.sp, color = GameColors.uiTextDim)
+        style = TextStyle(fontSize = 13.sp, color = GameColors.uiTextDim)
     )
     drawText(movesLabel, topLeft = Offset(centerX - movesLabel.size.width / 2f, statsY + movesText.size.height))
 
-    // Score
+    // Level Score
+    val scoreX = centerX + 60 * density
     val scoreText = textMeasurer.measure(
         AnnotatedString("${uiState.score}"),
         style = TextStyle(
             fontFamily = CinzelFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
+            fontSize = 26.sp,
             color = GameColors.uiAccent
         )
     )
-    drawText(scoreText, topLeft = Offset(centerX + 80 * density, statsY + 2 * density))
+    drawText(scoreText, topLeft = Offset(scoreX - scoreText.size.width / 2f, statsY))
+
+    val scoreLabelText = textMeasurer.measure(
+        AnnotatedString("score"),
+        style = TextStyle(fontSize = 13.sp, color = GameColors.uiTextDim)
+    )
+    drawText(scoreLabelText, topLeft = Offset(scoreX - scoreLabelText.size.width / 2f, statsY + scoreText.size.height))
+
+    // Total Score
+    val totalX = centerX + 140 * density
+    val totalText = textMeasurer.measure(
+        AnnotatedString("${uiState.totalScore}"),
+        style = TextStyle(
+            fontFamily = CinzelFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 21.sp,
+            color = GameColors.uiTextDim
+        )
+    )
+    drawText(totalText, topLeft = Offset(totalX - totalText.size.width / 2f, statsY + 2 * density))
+
+    val totalLabelText = textMeasurer.measure(
+        AnnotatedString("total"),
+        style = TextStyle(fontSize = 13.sp, color = GameColors.uiTextDim.copy(alpha = 0.6f))
+    )
+    drawText(totalLabelText, topLeft = Offset(totalX - totalLabelText.size.width / 2f, statsY + totalText.size.height + 2 * density))
 
     // Mode-specific HUD
-    val modeHudY = statsY + 36 * density
+    val modeHudY = statsY + 42 * density
     when (uiState.mode) {
         GameMode.CHAIN -> {
             if (uiState.comboCount > 0) {
@@ -683,7 +709,7 @@ private fun DrawScope.drawHud(
                     style = TextStyle(
                         fontFamily = CinzelFontFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
+                        fontSize = 21.sp,
                         color = GameColors.chainCombo
                     )
                 )
@@ -696,7 +722,7 @@ private fun DrawScope.drawHud(
                 style = TextStyle(
                     fontFamily = InterFontFamily,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
+                    fontSize = 18.sp,
                     color = GameColors.illuminateAccent
                 )
             )
@@ -708,7 +734,7 @@ private fun DrawScope.drawHud(
                 style = TextStyle(
                     fontFamily = InterFontFamily,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
+                    fontSize = 18.sp,
                     color = GameColors.clearAccent
                 )
             )
@@ -725,7 +751,7 @@ private fun DrawScope.drawHud(
                 AnnotatedString(msg),
                 style = TextStyle(
                     fontFamily = InterFontFamily,
-                    fontSize = 13.sp,
+                    fontSize = 17.sp,
                     color = GameColors.uiText.copy(alpha = 0.8f)
                 ),
                 constraints = androidx.compose.ui.unit.Constraints(
@@ -747,7 +773,7 @@ private fun DrawScope.drawHud(
     }
 
     // Canvas buttons (sound toggle, logout)
-    val btnRadius = 14f * density
+    val btnRadius = 18f * density
     val rightPadding = 20f * density
 
     // Sound toggle
@@ -756,7 +782,7 @@ private fun DrawScope.drawHud(
     drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(soundX, soundY))
     val soundText = textMeasurer.measure(
         AnnotatedString(if (uiState.audioEnabled) "♪" else "✕"),
-        style = TextStyle(fontSize = 12.sp, color = GameColors.uiText)
+        style = TextStyle(fontSize = 16.sp, color = GameColors.uiText)
     )
     drawText(soundText, topLeft = Offset(soundX - soundText.size.width / 2f, soundY - soundText.size.height / 2f))
 
@@ -766,7 +792,7 @@ private fun DrawScope.drawHud(
     drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(logoutX, logoutY))
     val logoutText = textMeasurer.measure(
         AnnotatedString("✕"),
-        style = TextStyle(fontSize = 14.sp, color = GameColors.uiText)
+        style = TextStyle(fontSize = 18.sp, color = GameColors.uiText)
     )
     drawText(logoutText, topLeft = Offset(logoutX - logoutText.size.width / 2f, logoutY - logoutText.size.height / 2f))
 
@@ -779,7 +805,7 @@ private fun DrawScope.drawHud(
         drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(backX, bottomY))
         val backText = textMeasurer.measure(
             AnnotatedString("◀"),
-            style = TextStyle(fontSize = 12.sp, color = GameColors.uiText)
+            style = TextStyle(fontSize = 16.sp, color = GameColors.uiText)
         )
         drawText(backText, topLeft = Offset(backX - backText.size.width / 2f, bottomY - backText.size.height / 2f))
     }
@@ -790,7 +816,7 @@ private fun DrawScope.drawHud(
         drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(fwdX, bottomY))
         val fwdText = textMeasurer.measure(
             AnnotatedString("▶"),
-            style = TextStyle(fontSize = 12.sp, color = GameColors.uiText)
+            style = TextStyle(fontSize = 16.sp, color = GameColors.uiText)
         )
         drawText(fwdText, topLeft = Offset(fwdX - fwdText.size.width / 2f, bottomY - fwdText.size.height / 2f))
     }
@@ -800,7 +826,7 @@ private fun DrawScope.drawHud(
     drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(shareX, bottomY))
     val shareText = textMeasurer.measure(
         AnnotatedString("↗"),
-        style = TextStyle(fontSize = 14.sp, color = GameColors.uiAccent)
+        style = TextStyle(fontSize = 18.sp, color = GameColors.uiAccent)
     )
     drawText(shareText, topLeft = Offset(shareX - shareText.size.width / 2f, bottomY - shareText.size.height / 2f))
 }
@@ -818,7 +844,7 @@ private fun DrawScope.drawVictoryOverlay(
     val centerY = size.height * 0.4f
 
     // Title
-    val titleSize = if (uiState.isUltimateVictory) 32.sp else 28.sp
+    val titleSize = if (uiState.isUltimateVictory) 42.sp else 36.sp
     val titleColor = if (uiState.isUltimateVictory) {
         GameColors.uiAccent.copy(alpha = 0.8f + 0.2f * sin(time * 3f))
     } else GameColors.uiAccent
@@ -838,7 +864,7 @@ private fun DrawScope.drawVictoryOverlay(
     val starStr = "★".repeat(uiState.stars) + "☆".repeat(3 - uiState.stars)
     val starsText = textMeasurer.measure(
         AnnotatedString(starStr),
-        style = TextStyle(fontSize = 32.sp, color = GameColors.uiAccent)
+        style = TextStyle(fontSize = 42.sp, color = GameColors.uiAccent)
     )
     drawText(starsText, topLeft = Offset(centerX - starsText.size.width / 2f, starsY))
 
@@ -849,7 +875,7 @@ private fun DrawScope.drawVictoryOverlay(
         style = TextStyle(
             fontFamily = CinzelFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
+            fontSize = 26.sp,
             color = GameColors.uiText
         )
     )
@@ -860,7 +886,7 @@ private fun DrawScope.drawVictoryOverlay(
         val subY = scoreY + scoreText.size.height + 12 * density
         val subText = textMeasurer.measure(
             AnnotatedString(uiState.victorySubtitle),
-            style = TextStyle(fontSize = 14.sp, color = GameColors.uiTextDim)
+            style = TextStyle(fontSize = 18.sp, color = GameColors.uiTextDim)
         )
         drawText(subText, topLeft = Offset(centerX - subText.size.width / 2f, subY))
     }
@@ -870,7 +896,7 @@ private fun DrawScope.drawVictoryOverlay(
     val tapAlpha = 0.5f + 0.5f * sin(time * 2f)
     val tapText = textMeasurer.measure(
         AnnotatedString("Tap anywhere to continue"),
-        style = TextStyle(fontSize = 14.sp, color = GameColors.uiText.copy(alpha = tapAlpha))
+        style = TextStyle(fontSize = 18.sp, color = GameColors.uiText.copy(alpha = tapAlpha))
     )
     drawText(tapText, topLeft = Offset(centerX - tapText.size.width / 2f, tapY))
 }
@@ -890,7 +916,7 @@ private fun DrawScope.drawDefeatOverlay(
         style = TextStyle(
             fontFamily = CinzelFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 24.sp,
+            fontSize = 31.sp,
             color = GameColors.uiError
         )
     )
@@ -912,7 +938,7 @@ private fun DrawScope.drawCooldownOverlay(
         style = TextStyle(
             fontFamily = CinzelFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 28.sp,
+            fontSize = 36.sp,
             color = GameColors.uiError
         )
     )
@@ -923,7 +949,7 @@ private fun DrawScope.drawCooldownOverlay(
         style = TextStyle(
             fontFamily = CinzelFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 48.sp,
+            fontSize = 62.sp,
             color = GameColors.uiAccent
         )
     )
@@ -936,7 +962,7 @@ private fun DrawScope.drawCooldownOverlay(
     if (remaining <= 0) {
         val tapText = textMeasurer.measure(
             AnnotatedString("Tap anywhere to continue"),
-            style = TextStyle(fontSize = 14.sp, color = GameColors.uiText)
+            style = TextStyle(fontSize = 18.sp, color = GameColors.uiText)
         )
         drawText(tapText, topLeft = Offset(
             centerX - tapText.size.width / 2f,
@@ -959,7 +985,7 @@ private fun DrawScope.drawFeedbackMessage(
         style = TextStyle(
             fontFamily = InterFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
+            fontSize = 21.sp,
             color = Color.White.copy(alpha = alpha)
         )
     )

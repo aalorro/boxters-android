@@ -45,7 +45,7 @@ data class GameUiState(
     val tracePath: List<HexCoord> = emptyList(),
     val traceWord: String = "",
     val traceValidation: TraceValidation = TraceValidation.NONE,
-    val hexSize: Float = 47f,
+    val hexSize: Float = 61f,
     val boardCenter: Offset = Offset.Zero,
     val mode: GameMode = GameMode.SIMPLE,
     val levelData: LevelData? = null,

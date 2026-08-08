@@ -31,9 +31,9 @@ object Gameplay {
 }
 
 object HexGeometry {
-    const val DEFAULT_SIZE_DP = 47f
-    const val MIN_SIZE_DP = 30f
-    const val MAX_SIZE_DP = 62f
+    const val DEFAULT_SIZE_DP = 61f
+    const val MIN_SIZE_DP = 39f
+    const val MAX_SIZE_DP = 81f
     const val PADDING_DP = 4f
     const val LETTER_SIZE_RATIO = 0.675f
     const val GLOW_RADIUS_DP = 12f

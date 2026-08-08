@@ -550,7 +550,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onNavigateLevel(delta: Int) {
         if (_uiState.value.hasMovesInProgress) return
-        val newLevel = (currentLevelIndex + delta).coerceIn(0, Gameplay.LEVELS_PER_MODE - 1)
+        val highestReached = profile?.highestLevels?.get(currentMode.id) ?: 0
+        val maxAllowed = minOf(highestReached, Gameplay.LEVELS_PER_MODE - 1)
+        val newLevel = (currentLevelIndex + delta).coerceIn(0, maxAllowed)
         if (newLevel != currentLevelIndex) {
             startLevel(newLevel)
         }
@@ -698,7 +700,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             lastWordCellKeys = b.lastWordCellKeys.toSet(),
             hasMovesInProgress = b.moveHistory.isNotEmpty(),
             canGoBack = currentLevelIndex > 0 && b.moveHistory.isEmpty(),
-            canGoForward = currentLevelIndex < Gameplay.LEVELS_PER_MODE - 1 && b.moveHistory.isEmpty()
+            canGoForward = run {
+                val highestReached = profile?.highestLevels?.get(currentMode.id) ?: 0
+                currentLevelIndex < highestReached && b.moveHistory.isEmpty()
+            }
         )
     }
 
