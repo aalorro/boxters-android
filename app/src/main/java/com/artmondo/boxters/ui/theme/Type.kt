@@ -20,70 +20,70 @@ val InterFontFamily = FontFamily(
 )
 
 object GameTypography {
-    val title = TextStyle(
+    val title get() = TextStyle(
         fontFamily = CinzelFontFamily,
         fontWeight = FontWeight.Black,
         fontSize = 42.sp,
         color = GameColors.uiAccent
     )
-    val levelName = TextStyle(
+    val levelName get() = TextStyle(
         fontFamily = CinzelFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 21.sp,
         color = GameColors.uiAccent
     )
-    val modeBadge = TextStyle(
+    val modeBadge get() = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 16.sp
     )
-    val scoreMain = TextStyle(
+    val scoreMain get() = TextStyle(
         fontFamily = CinzelFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 20.sp,
         color = GameColors.uiAccent
     )
-    val scoreLevel = TextStyle(
+    val scoreLevel get() = TextStyle(
         fontFamily = CinzelFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 13.sp,
         color = GameColors.uiTextDim
     )
-    val wordTray = TextStyle(
+    val wordTray get() = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 35.sp
     )
-    val tutorial = TextStyle(
+    val tutorial get() = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 18.sp,
         color = GameColors.uiText
     )
-    val objective = TextStyle(
+    val objective get() = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 18.sp,
         color = GameColors.uiText
     )
-    val button = TextStyle(
+    val button get() = TextStyle(
         fontFamily = CinzelFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 21.sp
     )
-    val body = TextStyle(
+    val body get() = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 18.sp,
         color = GameColors.uiText
     )
-    val statValue = TextStyle(
+    val statValue get() = TextStyle(
         fontFamily = CinzelFontFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 26.sp,
         color = GameColors.uiAccent
     )
-    val statLabel = TextStyle(
+    val statLabel get() = TextStyle(
         fontFamily = InterFontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,

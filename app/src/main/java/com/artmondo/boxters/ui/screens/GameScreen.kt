@@ -84,6 +84,7 @@ fun GameScreen(
                         onModeSelected = viewModel::onModeSelected,
                         onPlay = viewModel::onPlayClicked,
                         onToggleSound = viewModel::onToggleSound,
+                        onToggleTheme = viewModel::onToggleTheme,
                         onInfoClicked = { showInfoDialog = true }
                     )
                 }
@@ -102,6 +103,11 @@ fun GameScreen(
                     onInfoClicked = { showInfoDialog = true },
                     onLogout = viewModel::onLogout,
                     onShare = viewModel::onShareBoard,
+                    onLoad = {
+                        val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
+                        val text = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()
+                        viewModel.onLoadBoard(text)
+                    },
                     onNavigateLevel = viewModel::onNavigateLevel,
                     onSolutionWordSelected = viewModel::onSolutionWordSelected,
                     onFrame = viewModel::onFrame

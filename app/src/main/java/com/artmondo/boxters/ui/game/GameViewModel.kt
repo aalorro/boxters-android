@@ -18,6 +18,7 @@ import com.artmondo.boxters.domain.tracer.TraceResult
 import com.artmondo.boxters.domain.tracer.WordTracer
 import com.artmondo.boxters.particles.ParticleSystem
 import com.artmondo.boxters.sharing.BoardSharing
+import com.artmondo.boxters.ui.theme.GameColors
 import com.artmondo.boxters.util.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -52,6 +53,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private var confettiTimer = 0f
 
     init {
+        // Load theme preference before anything renders
+        val savedDark = playerRepository.loadDarkMode()
+        GameColors.isDark = savedDark
+        _uiState.value = _uiState.value.copy(isDarkMode = savedDark)
+
         loadGame()
     }
 
@@ -548,7 +554,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onSolutionWordSelected(path: List<HexCoord>) {
-        _uiState.value = _uiState.value.copy(highlightedSolutionPath = path)
+        _uiState.value = _uiState.value.copy(
+            highlightedSolutionPath = path.ifEmpty { null }
+        )
     }
 
     fun onToggleSound() {
@@ -556,8 +564,56 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(audioEnabled = audioManager.enabled)
     }
 
+    fun onToggleTheme() {
+        GameColors.isDark = !GameColors.isDark
+        playerRepository.saveDarkMode(GameColors.isDark)
+        _uiState.value = _uiState.value.copy(isDarkMode = GameColors.isDark)
+    }
+
     fun onLogout() {
         returnToMenu()
+    }
+
+    fun onLoadBoard(clipboardText: String?) {
+        if (clipboardText.isNullOrBlank()) {
+            showFeedback("Clipboard is empty")
+            return
+        }
+        val data = BoardSharing.decodeBoard(clipboardText)
+        if (data == null) {
+            showFeedback("No valid board link found")
+            return
+        }
+        val levelData = LevelRepository.getLevel(data.levelIndex)
+        if (levelData == null) {
+            showFeedback("Invalid level data")
+            return
+        }
+        currentMode = GameMode.fromId(levelData.mode)
+        currentLevelIndex = data.levelIndex - LevelRepository.getFirstLevelForMode(currentMode.id)
+
+        // Unlock mode and level so the shared board is playable
+        val p = profile
+        if (p != null) {
+            if (currentMode.id !in p.unlockedModes) {
+                p.unlockedModes.add(currentMode.id)
+            }
+            val highest = p.highestLevels[currentMode.id] ?: 0
+            if (currentLevelIndex > highest) {
+                p.highestLevels[currentMode.id] = currentLevelIndex
+            }
+            playerRepository.saveProfile(p)
+        }
+
+        val newBoard = BoardGenerator.generateBoardFromLetters(levelData, data.letters, data.anchorIndices)
+        board = newBoard
+        tracer = WordTracer(newBoard.field, dictionary)
+        objectiveTracker = ObjectiveTracker(levelData.objectives)
+        gameState = GameState.PLAYING
+        levelScore = 0
+
+        updateUiState(levelData)
+        showFeedback("Board loaded!")
     }
 
     fun onShareBoard() {
@@ -588,6 +644,19 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val levelData = LevelRepository.getLevel(data.levelIndex) ?: return
         currentMode = GameMode.fromId(levelData.mode)
         currentLevelIndex = data.levelIndex - LevelRepository.getFirstLevelForMode(currentMode.id)
+
+        // Unlock mode and level so the shared board is playable
+        val p = profile
+        if (p != null) {
+            if (currentMode.id !in p.unlockedModes) {
+                p.unlockedModes.add(currentMode.id)
+            }
+            val highest = p.highestLevels[currentMode.id] ?: 0
+            if (currentLevelIndex > highest) {
+                p.highestLevels[currentMode.id] = currentLevelIndex
+            }
+            playerRepository.saveProfile(p)
+        }
 
         val newBoard = BoardGenerator.generateBoardFromLetters(levelData, data.letters, data.anchorIndices)
         board = newBoard
@@ -649,8 +718,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun returnToMenu() {
         val p = profile ?: return
-        // Clear board snapshot when returning to menu
-        playerRepository.clearBoardSnapshot(currentMode.id)
+        // Save board state so player can resume where they left off
+        if (gameState == GameState.PLAYING && board != null && board!!.moveHistory.isNotEmpty()) {
+            saveBoardState()
+        }
         gameState = GameState.MENU
         board = null
         tracer = null

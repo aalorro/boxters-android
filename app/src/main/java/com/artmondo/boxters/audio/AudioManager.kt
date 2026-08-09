@@ -126,10 +126,17 @@ class GameAudioManager(private val context: Context) {
     }
 
     fun playUltimateVictory() {
-        playVictory()
+        if (!enabled || !initialized) return
+        // Play clapping
+        if (clapSoundIds.isNotEmpty()) {
+            val id = clapSoundIds.random()
+            soundPool?.play(id, 0.3f, 0.3f, 1, 0, 1.0f)
+        }
         if (victorySoundId != 0) {
             soundPool?.play(victorySoundId, 0.3f, 0.3f, 1, 0, 1.0f)
         }
+        // Play extended synthesized fanfare
+        playUltimateVictoryFanfare()
     }
 
     fun toggle() {
@@ -262,6 +269,104 @@ class GameAudioManager(private val context: Context) {
                             val wave = if (phase < 0.5f) 4f * phase - 1f else 3f - 4f * phase
                             mixBuffer[i] += wave * envelope
                         }
+                    }
+                }
+
+                // Convert to PCM
+                val pcm = ShortArray(numSamples)
+                for (i in 0 until numSamples) {
+                    val clamped = mixBuffer[i].coerceIn(-1f, 1f)
+                    pcm[i] = (clamped * Short.MAX_VALUE * 0.5f).toInt().toShort()
+                }
+
+                playPcmBuffer(pcm, 0.3f)
+            } catch (e: Exception) {
+                // Ignore
+            }
+        }.start()
+    }
+
+    private fun playUltimateVictoryFanfare() {
+        Thread {
+            try {
+                val durationSec = 7.0f
+                val numSamples = (sampleRate * durationSec).toInt()
+                val mixBuffer = FloatArray(numSamples)
+
+                data class Note(val freq: Float, val time: Float, val dur: Float, val volume: Float = 0.2f)
+
+                // Opening fanfare (ascending C-E-G-C)
+                val fanfare = listOf(
+                    Note(523.25f, 0f, 0.20f), Note(659.25f, 0.20f, 0.20f),
+                    Note(783.99f, 0.40f, 0.20f), Note(1046.50f, 0.60f, 0.50f)
+                )
+                // Melody
+                val melody = listOf(
+                    Note(783.99f, 1.3f, 0.20f), Note(880.00f, 1.5f, 0.20f),
+                    Note(1046.50f, 1.7f, 0.30f), Note(987.77f, 2.1f, 0.20f),
+                    Note(1046.50f, 2.3f, 0.20f), Note(1174.66f, 2.5f, 0.20f),
+                    Note(1318.51f, 2.8f, 0.70f)
+                )
+                // Flourish
+                val flourish = listOf(
+                    Note(1318.51f, 3.8f, 0.15f), Note(1174.66f, 3.95f, 0.15f),
+                    Note(1318.51f, 4.1f, 0.15f), Note(1567.98f, 4.3f, 0.60f)
+                )
+                // Coda — triumphant final resolution
+                val coda = listOf(
+                    Note(1567.98f, 5.1f, 0.15f, 0.18f), Note(1396.91f, 5.25f, 0.15f, 0.18f),
+                    Note(1318.51f, 5.4f, 0.15f, 0.18f), Note(1174.66f, 5.55f, 0.15f, 0.18f),
+                    Note(1046.50f, 5.7f, 0.20f, 0.22f), Note(1318.51f, 5.9f, 0.20f, 0.22f),
+                    Note(1567.98f, 6.1f, 0.80f, 0.25f)
+                )
+
+                for (note in fanfare + melody + flourish + coda) {
+                    val startSample = (note.time * sampleRate).toInt()
+                    val endSample = minOf(((note.time + note.dur + 0.4f) * sampleRate).toInt(), numSamples)
+                    for (i in startSample until endSample) {
+                        val t = (i - startSample).toFloat() / sampleRate
+                        val attack = if (t < 0.03f) t / 0.03f else 1f
+                        val decay = exp(-t * 3f).coerceAtLeast(0.001f)
+                        val envelope = attack * decay * note.volume
+                        mixBuffer[i] += (sin(2.0 * PI * note.freq * t).toFloat() * envelope)
+                    }
+                }
+
+                // Harmony pad — extended to cover full duration
+                val chords = listOf(
+                    Triple(listOf(261.63f, 329.63f, 392.00f), 0f, 2.0f),
+                    Triple(listOf(349.23f, 440.00f, 523.25f), 2.0f, 2.0f),
+                    Triple(listOf(261.63f, 329.63f, 392.00f), 4.0f, 1.5f),
+                    Triple(listOf(261.63f, 329.63f, 523.25f), 5.5f, 1.5f)
+                )
+                for ((notes, time, dur) in chords) {
+                    val startSample = (time * sampleRate).toInt()
+                    val endSample = minOf(((time + dur) * sampleRate).toInt(), numSamples)
+                    for (freq in notes) {
+                        for (i in startSample until endSample) {
+                            val t = (i - startSample).toFloat() / sampleRate
+                            val tNorm = t / dur
+                            val envelope = when {
+                                tNorm < 0.05f -> tNorm / 0.05f
+                                tNorm > 0.8f -> (1f - tNorm) / 0.2f
+                                else -> 1f
+                            } * 0.07f
+                            val phase = (freq * t) % 1.0f
+                            val wave = if (phase < 0.5f) 4f * phase - 1f else 3f - 4f * phase
+                            mixBuffer[i] += wave * envelope
+                        }
+                    }
+                }
+
+                // Shimmer layer for extra sparkle
+                val shimmerFreqs = listOf(2093.00f, 2637.02f, 3135.96f)
+                for (freq in shimmerFreqs) {
+                    val startSample = (5.7f * sampleRate).toInt()
+                    val endSample = minOf((6.9f * sampleRate).toInt(), numSamples)
+                    for (i in startSample until endSample) {
+                        val t = (i - startSample).toFloat() / sampleRate
+                        val envelope = sin(PI * t / 1.2).toFloat() * 0.04f
+                        mixBuffer[i] += (sin(2.0 * PI * freq * t).toFloat() * envelope)
                     }
                 }
 

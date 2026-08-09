@@ -40,4 +40,12 @@ class PlayerRepository(context: Context) {
     fun clearBoardSnapshot(mode: String) {
         boardPrefs.edit().remove("board_$mode").apply()
     }
+
+    fun loadDarkMode(): Boolean {
+        return prefs.getBoolean("dark_mode", true)
+    }
+
+    fun saveDarkMode(isDark: Boolean) {
+        prefs.edit().putBoolean("dark_mode", isDark).apply()
+    }
 }

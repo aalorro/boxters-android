@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -47,6 +48,7 @@ fun GameCanvas(
     onInfoClicked: () -> Unit,
     onLogout: () -> Unit,
     onShare: () -> Unit,
+    onLoad: () -> Unit,
     onNavigateLevel: (Int) -> Unit,
     onSolutionWordSelected: (List<HexCoord>) -> Unit,
     onFrame: (Float) -> Unit
@@ -128,6 +130,13 @@ fun GameCanvas(
                             val navY = canvasSize.height - 200.dp.toPx()
                             val navHitRadius = 39.dp.toPx()
 
+                            // Load button
+                            val loadPos = Offset(canvasSize.width - 110.dp.toPx(), navY)
+                            if ((pos - loadPos).getDistance() < navHitRadius) {
+                                onLoad()
+                                return@awaitEachGesture
+                            }
+
                             // Share button
                             val sharePos = Offset(canvasSize.width - 40.dp.toPx(), navY)
                             if ((pos - sharePos).getDistance() < navHitRadius) {
@@ -137,14 +146,14 @@ fun GameCanvas(
 
                             // Back arrow (left side)
                             val backPos = Offset(40.dp.toPx(), navY)
-                            if ((pos - backPos).getDistance() < navHitRadius) {
+                            if (uiState.canGoBack && (pos - backPos).getDistance() < navHitRadius) {
                                 onNavigateLevel(-1)
                                 return@awaitEachGesture
                             }
 
                             // Forward arrow (right of back)
                             val fwdPos = Offset(110.dp.toPx(), navY)
-                            if ((pos - fwdPos).getDistance() < navHitRadius) {
+                            if (uiState.canGoForward && (pos - fwdPos).getDistance() < navHitRadius) {
                                 onNavigateLevel(1)
                                 return@awaitEachGesture
                             }
@@ -176,8 +185,19 @@ fun GameCanvas(
                         }
                     } else if (uiState.gameState == GameState.COOLDOWN) {
                         awaitEachGesture {
-                            awaitFirstDown().consume()
-                            onCooldownTapped()
+                            val down = awaitFirstDown()
+                            down.consume()
+                            val pos = down.position
+                            // Info button is centered below the timer
+                            val infoBtnX = canvasSize.width / 2f
+                            // Approximate Y: title at 40% height + title height (~40dp) + 24dp gap + timer height (~66dp) + 40dp gap
+                            val infoBtnY = canvasSize.height * 0.4f + 170.dp.toPx()
+                            val buttonRadius = 28.dp.toPx()
+                            if ((pos - Offset(infoBtnX, infoBtnY)).getDistance() < buttonRadius) {
+                                onInfoClicked()
+                            } else {
+                                onCooldownTapped()
+                            }
                         }
                     }
                 }
@@ -426,7 +446,14 @@ fun GameCanvas(
                             ),
                             modifier = Modifier
                                 .background(GameColors.backgroundLight, RoundedCornerShape(4.dp))
-                                .clickable { onSolutionWordSelected(sw.path) }
+                                .pointerInput(sw.path) {
+                                    awaitEachGesture {
+                                        awaitFirstDown()
+                                        onSolutionWordSelected(sw.path)
+                                        waitForUpOrCancellation()
+                                        onSolutionWordSelected(emptyList())
+                                    }
+                                }
                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                         )
                     }
@@ -729,7 +756,7 @@ private fun DrawScope.drawHud(
     drawText(totalLabelText, topLeft = Offset(totalX - totalLabelText.size.width / 2f, statsY + totalText.size.height + 2 * density))
 
     // Mode-specific HUD
-    val modeHudY = statsY + 42 * density
+    val modeHudY = statsY + movesText.size.height + movesLabel.size.height + 6 * density
     when (uiState.mode) {
         GameMode.CHAIN -> {
             if (uiState.comboCount > 0) {
@@ -858,26 +885,47 @@ private fun DrawScope.drawHud(
     val navBtnRadius = 35f * density
 
     // Back arrow
-    if (uiState.canGoBack) {
-        val backX = 40f * density
-        drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(backX, navBottomY))
-        val backText = textMeasurer.measure(
-            AnnotatedString("◀"),
-            style = TextStyle(fontSize = 31.sp, color = GameColors.uiText)
-        )
-        drawText(backText, topLeft = Offset(backX - backText.size.width / 2f, navBottomY - backText.size.height / 2f))
-    }
+    val backX = 40f * density
+    val backAlpha = if (uiState.canGoBack) 1f else 0.3f
+    drawCircle(GameColors.uiPanel.copy(alpha = backAlpha), radius = navBtnRadius, center = Offset(backX, navBottomY))
+    val backText = textMeasurer.measure(
+        AnnotatedString("◀"),
+        style = TextStyle(fontSize = 31.sp, color = GameColors.uiText.copy(alpha = backAlpha))
+    )
+    drawText(backText, topLeft = Offset(backX - backText.size.width / 2f, navBottomY - backText.size.height / 2f))
 
     // Forward arrow
-    if (uiState.canGoForward) {
-        val fwdX = 110f * density
-        drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(fwdX, navBottomY))
-        val fwdText = textMeasurer.measure(
-            AnnotatedString("▶"),
-            style = TextStyle(fontSize = 31.sp, color = GameColors.uiText)
-        )
-        drawText(fwdText, topLeft = Offset(fwdX - fwdText.size.width / 2f, navBottomY - fwdText.size.height / 2f))
+    val fwdX = 110f * density
+    val fwdAlpha = if (uiState.canGoForward) 1f else 0.3f
+    drawCircle(GameColors.uiPanel.copy(alpha = fwdAlpha), radius = navBtnRadius, center = Offset(fwdX, navBottomY))
+    val fwdText = textMeasurer.measure(
+        AnnotatedString("▶"),
+        style = TextStyle(fontSize = 31.sp, color = GameColors.uiText.copy(alpha = fwdAlpha))
+    )
+    drawText(fwdText, topLeft = Offset(fwdX - fwdText.size.width / 2f, navBottomY - fwdText.size.height / 2f))
+
+    // Load button
+    val loadX = size.width - 110f * density
+    drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(loadX, navBottomY))
+    drawCircle(GameColors.uiAccent.copy(alpha = 0.5f), radius = navBtnRadius, center = Offset(loadX, navBottomY),
+        style = Stroke(width = 1.5f * density))
+    val loadPaint = Stroke(width = 2.5f * density, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    val loadIconSize = 9f * density
+    // Tray (open-top box)
+    val loadTrayPath = Path().apply {
+        moveTo(loadX - loadIconSize, navBottomY - 2f * density)
+        lineTo(loadX - loadIconSize, navBottomY + loadIconSize)
+        lineTo(loadX + loadIconSize, navBottomY + loadIconSize)
+        lineTo(loadX + loadIconSize, navBottomY - 2f * density)
     }
+    drawPath(loadTrayPath, GameColors.uiAccent, style = loadPaint)
+    // Downward arrow
+    val loadArrowBottom = navBottomY + 2f * density
+    val loadArrowTop = navBottomY - loadIconSize
+    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowTop), Offset(loadX, loadArrowBottom), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
+    val loadArrowHead = 5f * density
+    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowBottom), Offset(loadX - loadArrowHead, loadArrowBottom - loadArrowHead), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
+    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowBottom), Offset(loadX + loadArrowHead, loadArrowBottom - loadArrowHead), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
 
     // Share button
     val shareX = size.width - 40f * density
@@ -1027,6 +1075,22 @@ private fun DrawScope.drawCooldownOverlay(
             size.height * 0.7f
         ))
     }
+
+    // Info button (centered below timer)
+    val btnRadius = 22f * density
+    val infoX = centerX
+    val timerBottom = centerY + titleText.size.height + 24 * density + timerText.size.height
+    val infoY = timerBottom + 40 * density
+    drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(infoX, infoY))
+    drawCircle(GameColors.uiAccent.copy(alpha = 0.5f), radius = btnRadius, center = Offset(infoX, infoY),
+        style = Stroke(width = 1.5f * density))
+    drawCircle(GameColors.uiAccent, radius = 2.5f * density, center = Offset(infoX, infoY - 7f * density))
+    drawRoundRect(
+        color = GameColors.uiAccent,
+        topLeft = Offset(infoX - 2f * density, infoY - 2f * density),
+        size = Size(4f * density, 12f * density),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5f * density)
+    )
 }
 
 private fun DrawScope.drawFeedbackMessage(

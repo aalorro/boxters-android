@@ -76,6 +76,8 @@ data class GameUiState(
     val victorySubtitle: String = "",
     // Audio
     val audioEnabled: Boolean = true,
+    // Theme
+    val isDarkMode: Boolean = true,
     // Navigation
     val canGoBack: Boolean = false,
     val canGoForward: Boolean = false,

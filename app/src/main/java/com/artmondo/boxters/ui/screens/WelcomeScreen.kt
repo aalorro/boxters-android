@@ -28,6 +28,7 @@ fun WelcomeScreen(
     onModeSelected: (GameMode) -> Unit,
     onPlay: () -> Unit,
     onToggleSound: () -> Unit,
+    onToggleTheme: () -> Unit,
     onInfoClicked: () -> Unit
 ) {
     Box(
@@ -81,6 +82,19 @@ fun WelcomeScreen(
             ) {
                 Text(
                     text = if (uiState.audioEnabled) "\uD83D\uDD0A" else "\uD83D\uDD07",
+                    fontSize = 20.sp
+                )
+            }
+            // Theme toggle
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(GameColors.uiPanel, RoundedCornerShape(22.dp))
+                    .clickable { onToggleTheme() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (uiState.isDarkMode) "\u2600\uFE0F" else "\uD83C\uDF19",
                     fontSize = 20.sp
                 )
             }

@@ -140,6 +140,8 @@ private fun AboutContent() {
         BulletPoint("Common prefixes and suffixes (-ing, -tion, re-, un-) can help you spot longer words.")
         BulletPoint("Edge tiles are harder to connect later \u2014 use them early when you can.")
         BulletPoint("Don't waste moves on guesses. Invalid words (not in the dictionary) still cost a move!")
+        BulletPoint("Tap the share button to copy your board link. Send it to a friend to challenge them on the same board!")
+        BulletPoint("To load a shared board, copy the link, then tap the load button (left of the share button).")
 
         Spacer(modifier = Modifier.height(4.dp))
         InfoText("80,000+ word dictionary. No internet required.")
@@ -149,7 +151,7 @@ private fun AboutContent() {
             color = GameColors.uiTextDim
         )
         InfoText(
-            "Version 1.0.0",
+            "Version 1.1.0",
             color = GameColors.uiTextDim
         )
     }
@@ -197,8 +199,9 @@ private fun GamePlayContent() {
         BulletPoint("Harder modes have higher score multipliers.")
         BulletPoint("Earn 1\u20133 stars per level based on your score.")
 
-        InfoHeader("Sharing")
+        InfoHeader("Sharing & Loading")
         InfoText("Tap the share button (bottom-right of the board) to copy a link to your current board. Send it to a friend \u2014 they'll get the exact same board layout so you can compare scores!")
+        InfoText("To load a shared board, copy the link to your clipboard, then tap the load button (to the left of the share button). The board will load even if you haven't unlocked that level yet.")
 
         InfoHeader("Dictionary")
         InfoText("Boxters uses a curated dictionary of 80,000+ English words.")
@@ -216,6 +219,7 @@ private fun GamePlayContent() {
 private fun PrivacyContent() {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         InfoHeader("Privacy Policy")
+        InfoText("Effective Date: August 6, 2026", color = GameColors.uiTextDim)
 
         InfoText("Boxters is committed to protecting your privacy. This policy explains what data is stored, how it is used, and your rights regarding that data.")
 
@@ -224,18 +228,22 @@ private fun PrivacyContent() {
         BulletPoint("No personal data is collected, processed, or sent to any server.")
         BulletPoint("No advertising SDKs are integrated.")
         BulletPoint("No account creation or internet connection is required to play.")
+        BulletPoint("No analytics or tracking tools are used in this app.")
+
+        InfoHeader("Contact Form")
+        InfoText("If you choose to use the Contact form, the name, email, and message you enter are sent to Formspree for delivery. This data is not stored by Boxters and is subject to Formspree's privacy policy. Submitting the form is entirely optional.")
 
         InfoHeader("Local Storage")
         InfoText("Your game progress (player name, scores, level progress, and settings) is stored locally on your device using SharedPreferences. This data:")
         BulletPoint("Never leaves your device.")
-        BulletPoint("Is accessible only to you.")
-        BulletPoint("Is not shared across devices.")
-        BulletPoint("Can be cleared at any time by clearing the app's data in Android Settings.")
+        BulletPoint("Is accessible only to you within this app.")
+        BulletPoint("Is not shared across devices or apps.")
+        BulletPoint("Can be cleared at any time (see below).")
 
         InfoHeader("Your Rights")
         InfoText("You have full control over your data:")
-        BulletPoint("Access: Your data is stored on your device and visible only to you.")
-        BulletPoint("Deletion: Clear all saved data by going to Android Settings > Apps > Boxters > Clear Data.")
+        BulletPoint("Access: Your data is stored on your device and visible to you at any time.")
+        BulletPoint("Deletion: Clear all saved data by going to Android Settings > Apps > Boxters > Storage > Clear Data.")
         BulletPoint("Portability: No cloud data exists to export \u2014 all data is local.")
 
         InfoHeader("Children's Privacy")
@@ -245,7 +253,7 @@ private fun PrivacyContent() {
         InfoText("Any updates to this privacy policy will be reflected here with a revised effective date.")
 
         InfoText(
-            "Last updated: August 2026",
+            "Last updated: August 9, 2026",
             color = GameColors.uiTextDim
         )
     }
