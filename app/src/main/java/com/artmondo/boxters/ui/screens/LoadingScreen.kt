@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.artmondo.boxters.ui.theme.*
@@ -59,7 +60,9 @@ fun LoadingScreen() {
                     fontWeight = FontWeight.Light,
                     color = GameColors.uiTextDim,
                     fontSize = 14.sp
-                )
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 24.dp)
             )
             Spacer(modifier = Modifier.height(40.dp))
             CircularProgressIndicator(

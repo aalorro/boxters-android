@@ -86,20 +86,22 @@ fun InfoDialog(onDismiss: () -> Unit) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(36.dp)
+                            .defaultMinSize(minHeight = 36.dp)
                             .background(
                                 if (isSelected) GameColors.uiAccent else GameColors.uiPanel,
                                 RoundedCornerShape(8.dp)
                             )
-                            .clickable { selectedTab = tab },
+                            .clickable { selectedTab = tab }
+                            .padding(vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = tab.label,
                             style = GameTypography.modeBadge.copy(
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
                                 color = if (isSelected) GameColors.backgroundDark else GameColors.uiTextDim
-                            )
+                            ),
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
@@ -405,8 +407,8 @@ private suspend fun submitContactForm(name: String, email: String, message: Stri
 private fun InfoHeader(text: String) {
     Text(
         text = text,
-        style = GameTypography.levelName.copy(fontSize = 18.sp),
-        modifier = Modifier.padding(top = 4.dp)
+        style = GameTypography.levelName.copy(fontSize = 16.sp),
+        modifier = Modifier.padding(top = 4.dp).fillMaxWidth()
     )
 }
 
@@ -417,29 +419,30 @@ private fun InfoText(
 ) {
     Text(
         text = text,
-        style = GameTypography.body.copy(fontSize = 14.sp, color = color),
-        lineHeight = 20.sp
+        style = GameTypography.body.copy(fontSize = 13.sp, color = color),
+        lineHeight = 18.sp,
+        modifier = Modifier.fillMaxWidth()
     )
 }
 
 @Composable
 private fun BulletPoint(text: String) {
-    Row(modifier = Modifier.padding(start = 8.dp)) {
+    Row(modifier = Modifier.padding(start = 8.dp).fillMaxWidth()) {
         Text(
             text = "\u2022  ",
-            style = GameTypography.body.copy(fontSize = 14.sp),
+            style = GameTypography.body.copy(fontSize = 13.sp),
         )
         Text(
             text = text,
-            style = GameTypography.body.copy(fontSize = 14.sp),
-            lineHeight = 20.sp
+            style = GameTypography.body.copy(fontSize = 13.sp),
+            lineHeight = 18.sp
         )
     }
 }
 
 @Composable
 private fun ModeDescription(name: String, description: String, tip: String) {
-    Column(modifier = Modifier.padding(start = 8.dp)) {
+    Column(modifier = Modifier.padding(start = 8.dp).fillMaxWidth()) {
         Text(
             text = buildAnnotatedString {
                 withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = GameColors.uiAccent)) {
@@ -447,18 +450,18 @@ private fun ModeDescription(name: String, description: String, tip: String) {
                 }
                 append(" \u2014 $description")
             },
-            style = GameTypography.body.copy(fontSize = 14.sp),
-            lineHeight = 20.sp
+            style = GameTypography.body.copy(fontSize = 13.sp),
+            lineHeight = 18.sp
         )
         Text(
             text = "Tip: $tip",
             style = GameTypography.body.copy(
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 color = GameColors.uiTextDim,
                 fontWeight = FontWeight.Light
             ),
             modifier = Modifier.padding(start = 8.dp, top = 4.dp),
-            lineHeight = 18.sp
+            lineHeight = 16.sp
         )
     }
 }
