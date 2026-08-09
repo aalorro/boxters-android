@@ -115,6 +115,7 @@ fun WelcomeScreen(
             Text(
                 text = "Welcome back, ",
                 style = GameTypography.body.copy(fontSize = 16.sp),
+                textAlign = TextAlign.Center
             )
             Text(
                 text = uiState.playerName,
@@ -122,7 +123,8 @@ fun WelcomeScreen(
                     fontSize = 16.sp,
                     color = GameColors.uiAccent,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                )
+                ),
+                textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(32.dp))
 

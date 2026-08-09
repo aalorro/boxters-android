@@ -24,6 +24,7 @@ import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.artmondo.boxters.data.model.*
@@ -55,11 +56,14 @@ fun GameCanvas(
 ) {
     val density = LocalDensity.current
     val textMeasurer = rememberTextMeasurer()
+    val isPhone = LocalConfiguration.current.screenWidthDp < 600
 
     var canvasSize by remember { mutableStateOf(Size.Zero) }
     var boardCenter by remember { mutableStateOf(Offset.Zero) }
     var hexSize by remember { mutableFloatStateOf(61f) }
     var time by remember { mutableFloatStateOf(0f) }
+    var showTutorialPopup by remember { mutableStateOf(false) }
+    var cooldownInfoBtnY by remember { mutableFloatStateOf(0f) }
 
     // Animation loop
     LaunchedEffect(Unit) {
@@ -80,11 +84,17 @@ fun GameCanvas(
     LaunchedEffect(uiState.cells.size, canvasSize) {
         if (canvasSize.width > 0 && uiState.cells.isNotEmpty()) {
             with(density) {
-                hexSize = HexMath.calculateHexSize(
+                var size = HexMath.calculateHexSize(
                     uiState.cells.size,
                     canvasSize.width / density.density,
                     canvasSize.height / density.density
                 ) * density.density
+                // Reduce tile size by 15% on phones for larger boards (hex2=19, hex3=37)
+                val screenWidthDp = canvasSize.width / density.density
+                if (screenWidthDp < 600f && uiState.cells.size > 7) {
+                    size *= 0.75f
+                }
+                hexSize = size
             }
             boardCenter = Offset(canvasSize.width / 2f, canvasSize.height * 0.5f)
         }
@@ -100,10 +110,19 @@ fun GameCanvas(
                             val down = awaitFirstDown()
                             down.consume()
 
+                            // If tutorial popup is showing, dismiss on any tap
+                            if (showTutorialPopup) {
+                                showTutorialPopup = false
+                                return@awaitEachGesture
+                            }
+
                             // Check button hits first
                             val pos = down.position
                             val buttonRadius = 28.dp.toPx()
-                            val btnY = 58.dp.toPx()
+
+                            val screenWidthDp = canvasSize.width / density.density
+                            // Align hit zone to mode badge row (topPadding + levelHeight + gap + half badge)
+                            val btnY = if (screenWidthDp < 600f) 78.dp.toPx() else 98.dp.toPx()
 
                             // Info button (top-right area, leftmost)
                             val infoBtnPos = Offset(canvasSize.width - 152.dp.toPx(), btnY)
@@ -112,10 +131,14 @@ fun GameCanvas(
                                 return@awaitEachGesture
                             }
 
-                            // Sound button (top-right area)
-                            val soundBtnPos = Offset(canvasSize.width - 86.dp.toPx(), btnY)
-                            if ((pos - soundBtnPos).getDistance() < buttonRadius) {
-                                onToggleSound()
+                            // Middle button: tutorial on phones, sound on tablets
+                            val midBtnPos = Offset(canvasSize.width - 86.dp.toPx(), btnY)
+                            if ((pos - midBtnPos).getDistance() < buttonRadius) {
+                                if (screenWidthDp < 600f && uiState.tutorialMessage != null && uiState.wordsFormed.isEmpty()) {
+                                    showTutorialPopup = true
+                                } else if (screenWidthDp >= 600f) {
+                                    onToggleSound()
+                                }
                                 return@awaitEachGesture
                             }
 
@@ -126,7 +149,7 @@ fun GameCanvas(
                                 return@awaitEachGesture
                             }
 
-                            // Bottom nav buttons
+                            // Bottom nav buttons — positions stay fixed, only visuals scale
                             val navY = canvasSize.height - 200.dp.toPx()
                             val navHitRadius = 39.dp.toPx()
 
@@ -144,16 +167,16 @@ fun GameCanvas(
                                 return@awaitEachGesture
                             }
 
-                            // Back arrow (left side)
+                            // Back arrow
                             val backPos = Offset(40.dp.toPx(), navY)
-                            if (uiState.canGoBack && (pos - backPos).getDistance() < navHitRadius) {
+                            if ((pos - backPos).getDistance() < navHitRadius) {
                                 onNavigateLevel(-1)
                                 return@awaitEachGesture
                             }
 
-                            // Forward arrow (right of back)
+                            // Forward arrow
                             val fwdPos = Offset(110.dp.toPx(), navY)
-                            if (uiState.canGoForward && (pos - fwdPos).getDistance() < navHitRadius) {
+                            if ((pos - fwdPos).getDistance() < navHitRadius) {
                                 onNavigateLevel(1)
                                 return@awaitEachGesture
                             }
@@ -188,12 +211,10 @@ fun GameCanvas(
                             val down = awaitFirstDown()
                             down.consume()
                             val pos = down.position
-                            // Info button is centered below the timer
+                            // Info button position is stored by drawCooldownOverlay
                             val infoBtnX = canvasSize.width / 2f
-                            // Approximate Y: title at 40% height + title height (~40dp) + 24dp gap + timer height (~66dp) + 40dp gap
-                            val infoBtnY = canvasSize.height * 0.4f + 170.dp.toPx()
                             val buttonRadius = 28.dp.toPx()
-                            if ((pos - Offset(infoBtnX, infoBtnY)).getDistance() < buttonRadius) {
+                            if (cooldownInfoBtnY > 0f && (pos - Offset(infoBtnX, cooldownInfoBtnY)).getDistance() < buttonRadius) {
                                 onInfoClicked()
                             } else {
                                 onCooldownTapped()
@@ -290,13 +311,15 @@ fun GameCanvas(
             }
 
             // Draw HUD text elements
-            drawHud(uiState, textMeasurer, density.density, time)
+            drawHud(uiState, textMeasurer, density.density, time, showTutorialPopup)
 
             // Draw overlays
             when (uiState.gameState) {
                 GameState.VICTORY -> drawVictoryOverlay(uiState, textMeasurer, density.density, time)
                 GameState.DEFEAT, GameState.GAME_OVER -> drawDefeatOverlay(uiState, textMeasurer, density.density)
-                GameState.COOLDOWN -> drawCooldownOverlay(uiState, textMeasurer, density.density)
+                GameState.COOLDOWN -> {
+                    cooldownInfoBtnY = drawCooldownOverlay(uiState, textMeasurer, density.density)
+                }
                 else -> {}
             }
 
@@ -335,27 +358,31 @@ fun GameCanvas(
             }
 
             // Objectives panel
+            val objFontSize = if (isPhone) 13.sp else 18.sp
+            val objIconSize = if (isPhone) 13.sp else 18.sp
+            val objProgressSize = if (isPhone) 12.sp else 16.sp
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 40.dp, start = 16.dp, end = 16.dp)
                     .background(GameColors.uiPanel, RoundedCornerShape(8.dp))
-                    .padding(12.dp)
+                    .padding(if (isPhone) 8.dp else 12.dp)
             ) {
                 for (obj in uiState.objectives) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = 2.dp)
+                        modifier = Modifier.padding(vertical = if (isPhone) 1.dp else 2.dp)
                     ) {
                         Text(
                             text = if (obj.completed) "✓" else "○",
                             color = if (obj.completed) GameColors.uiSuccess else GameColors.uiTextDim,
-                            fontSize = 18.sp,
-                            modifier = Modifier.width(24.dp)
+                            fontSize = objIconSize,
+                            modifier = Modifier.width(if (isPhone) 18.dp else 24.dp)
                         )
                         Text(
                             text = obj.description,
                             style = GameTypography.objective.copy(
+                                fontSize = objFontSize,
                                 textDecoration = if (obj.completed) TextDecoration.LineThrough else null,
                                 color = if (obj.completed) GameColors.uiTextDim else GameColors.uiText
                             ),
@@ -365,7 +392,7 @@ fun GameCanvas(
                             Text(
                                 text = "${obj.progress}/${obj.target}",
                                 style = GameTypography.objective.copy(color = GameColors.uiAccent),
-                                fontSize = 16.sp
+                                fontSize = objProgressSize
                             )
                         }
                     }
@@ -386,7 +413,7 @@ fun GameCanvas(
                             text = "${index + 1}.$word",
                             style = GameTypography.objective.copy(
                                 color = GameColors.uiAccent,
-                                fontSize = 16.sp,
+                                fontSize = if (isPhone) 13.sp else 16.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
                             modifier = Modifier
@@ -403,21 +430,39 @@ fun GameCanvas(
 
         // Solution modal for defeat/game over
         if (uiState.gameState == GameState.DEFEAT || uiState.gameState == GameState.GAME_OVER) {
+            // Defeat title — blank area above board on phones, above modal on tablets
+            if (isPhone) {
+                Text(
+                    text = if (uiState.gameState == GameState.GAME_OVER) "Game Over" else "Out of Moves",
+                    style = GameTypography.title.copy(
+                        fontSize = 30.sp,
+                        color = GameColors.uiError,
+                        fontWeight = FontWeight.ExtraBold
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 155.dp)
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Defeat title — positioned just above the modal
-                Text(
-                    text = if (uiState.gameState == GameState.GAME_OVER) "Game Over" else "Out of Moves",
-                    style = GameTypography.levelName.copy(
-                        fontSize = 31.sp,
-                        color = GameColors.uiError
-                    ),
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
+                // Defeat title — above modal on tablets only
+                if (!isPhone) {
+                    Text(
+                        text = if (uiState.gameState == GameState.GAME_OVER) "Game Over" else "Out of Moves",
+                        style = GameTypography.levelName.copy(
+                            fontSize = 31.sp,
+                            color = GameColors.uiError
+                        ),
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                }
 
                 // Modal panel
                 Column(
@@ -429,7 +474,8 @@ fun GameCanvas(
                 ) {
                 Text(
                     text = "Words You Could Have Played",
-                    style = GameTypography.levelName.copy(fontSize = 21.sp)
+                    style = GameTypography.levelName.copy(fontSize = if (isPhone) 17.sp else 21.sp),
+                    textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -473,7 +519,8 @@ fun GameCanvas(
                     Text(
                         text = if (uiState.gameState == GameState.GAME_OVER)
                             "Retry Level" else "Continue (${uiState.lives} lives left)",
-                        style = GameTypography.button
+                        style = GameTypography.button.copy(fontSize = if (isPhone) 14.sp else 18.sp),
+                        textAlign = TextAlign.Center
                     )
                 }
                 }
@@ -647,10 +694,23 @@ private fun DrawScope.drawHud(
     uiState: GameUiState,
     textMeasurer: TextMeasurer,
     density: Float,
-    time: Float
+    time: Float,
+    showTutorialPopup: Boolean = false
 ) {
-    val topPadding = 50f * density
+    val screenWidthDp = size.width / density
+    val isPhone = screenWidthDp < 600f
+
+    val topPadding = if (isPhone) 40f * density else 50f * density
     val leftPadding = 16f * density
+
+    // Font sizes — smaller on phones to avoid overlapping the board
+    val levelNameSize = if (isPhone) 17.sp else 23.sp
+    val badgeSize = if (isPhone) 14.sp else 18.sp
+    val heartsSize = if (isPhone) 16.sp else 21.sp
+    val statsNumSize = if (isPhone) 20.sp else 26.sp
+    val statsLabelSize = if (isPhone) 11.sp else 13.sp
+    val modeHudSize = if (isPhone) 14.sp else 18.sp
+    val tutorialSize = if (isPhone) 13.sp else 17.sp
 
     // Level name
     val levelName = uiState.levelData?.name ?: ""
@@ -659,7 +719,7 @@ private fun DrawScope.drawHud(
         style = TextStyle(
             fontFamily = CinzelFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 23.sp,
+            fontSize = levelNameSize,
             color = GameColors.uiAccent
         )
     )
@@ -678,7 +738,7 @@ private fun DrawScope.drawHud(
         style = TextStyle(
             fontFamily = InterFontFamily,
             fontWeight = FontWeight.SemiBold,
-            fontSize = 18.sp,
+            fontSize = badgeSize,
             color = modeAccent
         )
     )
@@ -695,7 +755,7 @@ private fun DrawScope.drawHud(
     }
     val heartsText = textMeasurer.measure(
         AnnotatedString(hearts),
-        style = TextStyle(fontSize = 21.sp, color = GameColors.uiError)
+        style = TextStyle(fontSize = heartsSize, color = GameColors.uiError)
     )
     drawText(heartsText, topLeft = Offset(centerX - 120 * density, statsY))
 
@@ -705,7 +765,7 @@ private fun DrawScope.drawHud(
         style = TextStyle(
             fontFamily = CinzelFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 26.sp,
+            fontSize = statsNumSize,
             color = if (uiState.movesRemaining <= 2) GameColors.uiWarning else GameColors.uiText
         )
     )
@@ -713,7 +773,7 @@ private fun DrawScope.drawHud(
 
     val movesLabel = textMeasurer.measure(
         AnnotatedString("moves"),
-        style = TextStyle(fontSize = 13.sp, color = GameColors.uiTextDim)
+        style = TextStyle(fontSize = statsLabelSize, color = GameColors.uiTextDim)
     )
     drawText(movesLabel, topLeft = Offset(centerX - movesLabel.size.width / 2f, statsY + movesText.size.height))
 
@@ -724,7 +784,7 @@ private fun DrawScope.drawHud(
         style = TextStyle(
             fontFamily = CinzelFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 26.sp,
+            fontSize = statsNumSize,
             color = GameColors.uiAccent
         )
     )
@@ -732,7 +792,7 @@ private fun DrawScope.drawHud(
 
     val scoreLabelText = textMeasurer.measure(
         AnnotatedString("score"),
-        style = TextStyle(fontSize = 13.sp, color = GameColors.uiTextDim)
+        style = TextStyle(fontSize = statsLabelSize, color = GameColors.uiTextDim)
     )
     drawText(scoreLabelText, topLeft = Offset(scoreX - scoreLabelText.size.width / 2f, statsY + scoreText.size.height))
 
@@ -743,7 +803,7 @@ private fun DrawScope.drawHud(
         style = TextStyle(
             fontFamily = CinzelFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 21.sp,
+            fontSize = if (isPhone) 16.sp else 21.sp,
             color = GameColors.uiTextDim
         )
     )
@@ -751,12 +811,13 @@ private fun DrawScope.drawHud(
 
     val totalLabelText = textMeasurer.measure(
         AnnotatedString("total"),
-        style = TextStyle(fontSize = 13.sp, color = GameColors.uiTextDim.copy(alpha = 0.6f))
+        style = TextStyle(fontSize = statsLabelSize, color = GameColors.uiTextDim.copy(alpha = 0.6f))
     )
     drawText(totalLabelText, topLeft = Offset(totalX - totalLabelText.size.width / 2f, statsY + totalText.size.height + 2 * density))
 
     // Mode-specific HUD
     val modeHudY = statsY + movesText.size.height + movesLabel.size.height + 6 * density
+    val comboSize = if (isPhone) 16.sp else 21.sp
     when (uiState.mode) {
         GameMode.CHAIN -> {
             if (uiState.comboCount > 0) {
@@ -765,7 +826,7 @@ private fun DrawScope.drawHud(
                     style = TextStyle(
                         fontFamily = CinzelFontFamily,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 21.sp,
+                        fontSize = comboSize,
                         color = GameColors.chainCombo
                     )
                 )
@@ -778,7 +839,7 @@ private fun DrawScope.drawHud(
                 style = TextStyle(
                     fontFamily = InterFontFamily,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 18.sp,
+                    fontSize = modeHudSize,
                     color = GameColors.illuminateAccent
                 )
             )
@@ -790,7 +851,7 @@ private fun DrawScope.drawHud(
                 style = TextStyle(
                     fontFamily = InterFontFamily,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 18.sp,
+                    fontSize = modeHudSize,
                     color = GameColors.clearAccent
                 )
             )
@@ -799,42 +860,76 @@ private fun DrawScope.drawHud(
         else -> {}
     }
 
-    // Tutorial message
-    uiState.tutorialMessage?.let { msg ->
-        if (uiState.wordsFormed.isEmpty()) {
-            val tutY = modeHudY + 30 * density
-            val tutText = textMeasurer.measure(
-                AnnotatedString(msg),
-                style = TextStyle(
-                    fontFamily = InterFontFamily,
-                    fontSize = 17.sp,
-                    color = GameColors.uiText.copy(alpha = 0.8f)
-                ),
-                constraints = androidx.compose.ui.unit.Constraints(
-                    maxWidth = (size.width * 0.85f).toInt()
-                )
-            )
-            // Background pill
-            drawRoundRect(
-                color = GameColors.uiPanel,
-                topLeft = Offset(centerX - tutText.size.width / 2f - 12 * density, tutY - 4 * density),
-                size = Size(
-                    tutText.size.width + 24 * density,
-                    tutText.size.height + 8 * density
-                ),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(8 * density)
-            )
-            drawText(tutText, topLeft = Offset(centerX - tutText.size.width / 2f, tutY))
-        }
-    }
-
-    // Canvas buttons (info, sound toggle, logout)
+    // Canvas button dimensions (used by tutorial popup and button drawing below)
     val btnRadius = 22f * density
     val rightPadding = 20f * density
 
+    // Tutorial message
+    uiState.tutorialMessage?.let { msg ->
+        if (uiState.wordsFormed.isEmpty()) {
+            if (isPhone) {
+                // Phone: tutorial popup drawn below the "?" button (which replaces sound toggle)
+                if (showTutorialPopup) {
+                    val popupAnchorY = topPadding + 8 * density + btnRadius + 8 * density
+                    val tutText = textMeasurer.measure(
+                        AnnotatedString(msg),
+                        style = TextStyle(
+                            fontFamily = InterFontFamily,
+                            fontSize = 13.sp,
+                            color = GameColors.uiText.copy(alpha = 0.9f)
+                        ),
+                        constraints = androidx.compose.ui.unit.Constraints(
+                            maxWidth = (size.width * 0.75f).toInt()
+                        )
+                    )
+                    // Right-align popup so it doesn't overflow the screen edge
+                    val popupPadding = 12 * density
+                    val popupX = (size.width - popupPadding - tutText.size.width - 16 * density).coerceAtLeast(popupPadding)
+                    drawRoundRect(
+                        color = GameColors.uiPanel,
+                        topLeft = Offset(popupX - 8 * density, popupAnchorY - 6 * density),
+                        size = Size(tutText.size.width + 16 * density, tutText.size.height + 12 * density),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8 * density)
+                    )
+                    drawRoundRect(
+                        color = GameColors.uiAccent.copy(alpha = 0.3f),
+                        topLeft = Offset(popupX - 8 * density, popupAnchorY - 6 * density),
+                        size = Size(tutText.size.width + 16 * density, tutText.size.height + 12 * density),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8 * density),
+                        style = Stroke(width = 1f * density)
+                    )
+                    drawText(tutText, topLeft = Offset(popupX, popupAnchorY))
+                }
+            } else {
+                // Tablet: show tutorial inline as before
+                val tutY = modeHudY + 30 * density
+                val tutText = textMeasurer.measure(
+                    AnnotatedString(msg),
+                    style = TextStyle(
+                        fontFamily = InterFontFamily,
+                        fontSize = tutorialSize,
+                        color = GameColors.uiText.copy(alpha = 0.8f)
+                    ),
+                    constraints = androidx.compose.ui.unit.Constraints(
+                        maxWidth = (size.width * 0.85f).toInt()
+                    )
+                )
+                drawRoundRect(
+                    color = GameColors.uiPanel,
+                    topLeft = Offset(centerX - tutText.size.width / 2f - 12 * density, tutY - 4 * density),
+                    size = Size(tutText.size.width + 24 * density, tutText.size.height + 8 * density),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8 * density)
+                )
+                drawText(tutText, topLeft = Offset(centerX - tutText.size.width / 2f, tutY))
+            }
+        }
+    }
+
+    // Canvas buttons (info, tutorial/sound, logout) — align to mode badge row
+    val btnCenterY = topPadding + levelText.size.height + 4 * density + badgeText.size.height / 2f
     // Info button
     val infoX = size.width - rightPadding - btnRadius * 6
-    val infoY = topPadding + 8 * density
+    val infoY = btnCenterY
     drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(infoX, infoY))
     drawCircle(GameColors.uiAccent.copy(alpha = 0.5f), radius = btnRadius, center = Offset(infoX, infoY),
         style = Stroke(width = 1.5f * density))
@@ -848,19 +943,37 @@ private fun DrawScope.drawHud(
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5f * density)
     )
 
-    // Sound toggle
-    val soundX = size.width - rightPadding - btnRadius * 3
-    val soundY = topPadding + 8 * density
-    drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(soundX, soundY))
-    val soundText = textMeasurer.measure(
-        AnnotatedString(if (uiState.audioEnabled) "\uD83D\uDD0A" else "\uD83D\uDD07"),
-        style = TextStyle(fontSize = 20.sp, color = GameColors.uiText)
-    )
-    drawText(soundText, topLeft = Offset(soundX - soundText.size.width / 2f, soundY - soundText.size.height / 2f))
+    // Middle button: tutorial "?" on phones, sound toggle on tablets
+    val midBtnX = size.width - rightPadding - btnRadius * 3
+    val midBtnY = btnCenterY
+    drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(midBtnX, midBtnY))
+    if (isPhone) {
+        // Tutorial "?" button
+        val showTutBtn = uiState.tutorialMessage != null && uiState.wordsFormed.isEmpty()
+        if (showTutBtn) {
+            drawCircle(GameColors.uiAccent.copy(alpha = 0.5f), radius = btnRadius, center = Offset(midBtnX, midBtnY),
+                style = Stroke(width = 1.5f * density))
+            val qMark = textMeasurer.measure(
+                AnnotatedString("?"),
+                style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = GameColors.uiAccent)
+            )
+            drawText(qMark, topLeft = Offset(midBtnX - qMark.size.width / 2f, midBtnY - qMark.size.height / 2f))
+        } else {
+            // No tutorial available — show empty/inactive button
+            drawCircle(GameColors.uiPanel.copy(alpha = 0.3f), radius = btnRadius, center = Offset(midBtnX, midBtnY))
+        }
+    } else {
+        // Sound toggle on tablets
+        val soundText = textMeasurer.measure(
+            AnnotatedString(if (uiState.audioEnabled) "\uD83D\uDD0A" else "\uD83D\uDD07"),
+            style = TextStyle(fontSize = 20.sp, color = GameColors.uiText)
+        )
+        drawText(soundText, topLeft = Offset(midBtnX - soundText.size.width / 2f, midBtnY - soundText.size.height / 2f))
+    }
 
     // Logout (exit door icon)
     val logoutX = size.width - rightPadding
-    val logoutY = topPadding + 8 * density
+    val logoutY = btnCenterY
     drawCircle(GameColors.uiPanel, radius = btnRadius, center = Offset(logoutX, logoutY))
     val exitStroke = Stroke(width = 2f * density, cap = StrokeCap.Round, join = StrokeJoin.Round)
     val exitSize = 8f * density
@@ -880,9 +993,12 @@ private fun DrawScope.drawHud(
     drawLine(GameColors.uiText, Offset(arrowEndX, logoutY), Offset(arrowEndX - arrowHead, logoutY - arrowHead), strokeWidth = 2f * density, cap = StrokeCap.Round)
     drawLine(GameColors.uiText, Offset(arrowEndX, logoutY), Offset(arrowEndX - arrowHead, logoutY + arrowHead), strokeWidth = 2f * density, cap = StrokeCap.Round)
 
-    // Bottom buttons: navigation arrows + share
+    // Bottom buttons: navigation arrows + share (smaller visuals on phones, positions fixed)
     val navBottomY = size.height - 200 * density
-    val navBtnRadius = 35f * density
+    val navScale = if (isPhone) 0.65f else 1f
+    val navBtnRadius = 35f * density * navScale
+    val navArrowFontSize = if (isPhone) 21.sp else 31.sp
+    val navStrokeWidth = 2.5f * density * navScale
 
     // Back arrow
     val backX = 40f * density
@@ -890,7 +1006,7 @@ private fun DrawScope.drawHud(
     drawCircle(GameColors.uiPanel.copy(alpha = backAlpha), radius = navBtnRadius, center = Offset(backX, navBottomY))
     val backText = textMeasurer.measure(
         AnnotatedString("◀"),
-        style = TextStyle(fontSize = 31.sp, color = GameColors.uiText.copy(alpha = backAlpha))
+        style = TextStyle(fontSize = navArrowFontSize, color = GameColors.uiText.copy(alpha = backAlpha))
     )
     drawText(backText, topLeft = Offset(backX - backText.size.width / 2f, navBottomY - backText.size.height / 2f))
 
@@ -900,7 +1016,7 @@ private fun DrawScope.drawHud(
     drawCircle(GameColors.uiPanel.copy(alpha = fwdAlpha), radius = navBtnRadius, center = Offset(fwdX, navBottomY))
     val fwdText = textMeasurer.measure(
         AnnotatedString("▶"),
-        style = TextStyle(fontSize = 31.sp, color = GameColors.uiText.copy(alpha = fwdAlpha))
+        style = TextStyle(fontSize = navArrowFontSize, color = GameColors.uiText.copy(alpha = fwdAlpha))
     )
     drawText(fwdText, topLeft = Offset(fwdX - fwdText.size.width / 2f, navBottomY - fwdText.size.height / 2f))
 
@@ -908,46 +1024,46 @@ private fun DrawScope.drawHud(
     val loadX = size.width - 110f * density
     drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(loadX, navBottomY))
     drawCircle(GameColors.uiAccent.copy(alpha = 0.5f), radius = navBtnRadius, center = Offset(loadX, navBottomY),
-        style = Stroke(width = 1.5f * density))
-    val loadPaint = Stroke(width = 2.5f * density, cap = StrokeCap.Round, join = StrokeJoin.Round)
-    val loadIconSize = 9f * density
+        style = Stroke(width = 1.5f * density * navScale))
+    val loadPaint = Stroke(width = navStrokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    val loadIconSize = 9f * density * navScale
     // Tray (open-top box)
     val loadTrayPath = Path().apply {
-        moveTo(loadX - loadIconSize, navBottomY - 2f * density)
+        moveTo(loadX - loadIconSize, navBottomY - 2f * density * navScale)
         lineTo(loadX - loadIconSize, navBottomY + loadIconSize)
         lineTo(loadX + loadIconSize, navBottomY + loadIconSize)
-        lineTo(loadX + loadIconSize, navBottomY - 2f * density)
+        lineTo(loadX + loadIconSize, navBottomY - 2f * density * navScale)
     }
     drawPath(loadTrayPath, GameColors.uiAccent, style = loadPaint)
     // Downward arrow
-    val loadArrowBottom = navBottomY + 2f * density
+    val loadArrowBottom = navBottomY + 2f * density * navScale
     val loadArrowTop = navBottomY - loadIconSize
-    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowTop), Offset(loadX, loadArrowBottom), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
-    val loadArrowHead = 5f * density
-    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowBottom), Offset(loadX - loadArrowHead, loadArrowBottom - loadArrowHead), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
-    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowBottom), Offset(loadX + loadArrowHead, loadArrowBottom - loadArrowHead), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
+    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowTop), Offset(loadX, loadArrowBottom), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
+    val loadArrowHead = 5f * density * navScale
+    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowBottom), Offset(loadX - loadArrowHead, loadArrowBottom - loadArrowHead), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
+    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowBottom), Offset(loadX + loadArrowHead, loadArrowBottom - loadArrowHead), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
 
     // Share button
     val shareX = size.width - 40f * density
     drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(shareX, navBottomY))
     drawCircle(GameColors.uiAccent.copy(alpha = 0.5f), radius = navBtnRadius, center = Offset(shareX, navBottomY),
-        style = Stroke(width = 1.5f * density))
-    val sharePaint = Stroke(width = 2.5f * density, cap = StrokeCap.Round, join = StrokeJoin.Round)
-    val shareIconSize = 9f * density
+        style = Stroke(width = 1.5f * density * navScale))
+    val sharePaint = Stroke(width = navStrokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    val shareIconSize = 9f * density * navScale
     // Tray (open-top box)
     val trayPath = Path().apply {
-        moveTo(shareX - shareIconSize, navBottomY - 2f * density)
+        moveTo(shareX - shareIconSize, navBottomY - 2f * density * navScale)
         lineTo(shareX - shareIconSize, navBottomY + shareIconSize)
         lineTo(shareX + shareIconSize, navBottomY + shareIconSize)
-        lineTo(shareX + shareIconSize, navBottomY - 2f * density)
+        lineTo(shareX + shareIconSize, navBottomY - 2f * density * navScale)
     }
     drawPath(trayPath, GameColors.uiAccent, style = sharePaint)
     // Upward arrow
     val arrowTop = navBottomY - shareIconSize
-    drawLine(GameColors.uiAccent, Offset(shareX, navBottomY + 2f * density), Offset(shareX, arrowTop), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
-    val arrowHeadSize = 5f * density
-    drawLine(GameColors.uiAccent, Offset(shareX, arrowTop), Offset(shareX - arrowHeadSize, arrowTop + arrowHeadSize), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
-    drawLine(GameColors.uiAccent, Offset(shareX, arrowTop), Offset(shareX + arrowHeadSize, arrowTop + arrowHeadSize), strokeWidth = 2.5f * density, cap = StrokeCap.Round)
+    drawLine(GameColors.uiAccent, Offset(shareX, navBottomY + 2f * density * navScale), Offset(shareX, arrowTop), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
+    val arrowHeadSize = 5f * density * navScale
+    drawLine(GameColors.uiAccent, Offset(shareX, arrowTop), Offset(shareX - arrowHeadSize, arrowTop + arrowHeadSize), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
+    drawLine(GameColors.uiAccent, Offset(shareX, arrowTop), Offset(shareX + arrowHeadSize, arrowTop + arrowHeadSize), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
 }
 
 private fun DrawScope.drawVictoryOverlay(
@@ -1033,7 +1149,7 @@ private fun DrawScope.drawCooldownOverlay(
     uiState: GameUiState,
     textMeasurer: TextMeasurer,
     density: Float
-) {
+): Float {
     drawRect(Color.Black.copy(alpha = 0.92f))
 
     val centerX = size.width / 2f
@@ -1091,6 +1207,7 @@ private fun DrawScope.drawCooldownOverlay(
         size = Size(4f * density, 12f * density),
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5f * density)
     )
+    return infoY
 }
 
 private fun DrawScope.drawFeedbackMessage(
@@ -1102,20 +1219,27 @@ private fun DrawScope.drawFeedbackMessage(
     val centerX = size.width / 2f
     val y = size.height * 0.28f
 
+    val isPhone = size.width / density < 600f
+    val fontSize = if (isPhone) 16.sp else 21.sp
+    val padding = 16 * density
+    val maxTextWidth = (size.width - padding * 4).toInt().coerceAtLeast(1)
+
     val text = textMeasurer.measure(
         AnnotatedString(message),
         style = TextStyle(
             fontFamily = InterFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 21.sp,
-            color = Color.White.copy(alpha = alpha)
-        )
+            fontSize = fontSize,
+            color = Color.White.copy(alpha = alpha),
+            textAlign = TextAlign.Center
+        ),
+        constraints = androidx.compose.ui.unit.Constraints(maxWidth = maxTextWidth)
     )
 
     drawRoundRect(
         color = Color(0xCC000000).copy(alpha = alpha * 0.8f),
-        topLeft = Offset(centerX - text.size.width / 2f - 16 * density, y - 4 * density),
-        size = Size(text.size.width + 32 * density, text.size.height + 8 * density),
+        topLeft = Offset(centerX - text.size.width / 2f - padding, y - 4 * density),
+        size = Size(text.size.width + padding * 2, text.size.height + 8 * density),
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(20 * density)
     )
     drawText(text, topLeft = Offset(centerX - text.size.width / 2f, y))
