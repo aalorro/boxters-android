@@ -378,6 +378,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val nextLevel = currentLevelIndex + 1
         val isUltimate = nextLevel >= Gameplay.LEVELS_PER_MODE
 
+        val isFirstModeCompletion = isUltimate && currentMode.id !in p.celebratedModes
+
         if (isUltimate) {
             // Mode completion
             val modeIndex = MODE_ORDER.indexOf(currentMode.id)
@@ -388,8 +390,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             p.currentLevels[currentMode.id] = 0
-            val isCelebrated = currentMode.id in p.celebratedModes
-            if (!isCelebrated) {
+            if (isFirstModeCompletion) {
                 p.celebratedModes.add(currentMode.id)
             }
         } else {
@@ -404,8 +405,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         p.lastMode = currentMode.id
         playerRepository.saveProfile(p)
         playerRepository.clearBoardSnapshot(currentMode.id)
-
-        val isCelebrateUltimate = isUltimate && currentMode.id !in (profile?.celebratedModes ?: emptyList()).dropLast(1)
 
         gameState = GameState.VICTORY
         victoryDelayTimer = 0f
@@ -429,9 +428,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             score = finalScore,
             totalScore = p.totalScore,
             stars = stars,
-            isUltimateVictory = isUltimate,
-            victoryTitle = if (isUltimate) ultimateTitle else victoryWord,
-            victorySubtitle = if (isUltimate) "You've mastered ${currentMode.displayName} mode!" else ""
+            isUltimateVictory = isFirstModeCompletion,
+            victoryTitle = if (isFirstModeCompletion) ultimateTitle else victoryWord,
+            victorySubtitle = if (isFirstModeCompletion) "You've mastered ${currentMode.displayName} mode!" else ""
         )
 
         // Particle burst
@@ -441,7 +440,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         // Audio
         viewModelScope.launch {
-            if (isUltimate) {
+            if (isFirstModeCompletion) {
                 _events.send(GameEvent.PlayUltimateVictory)
             } else {
                 _events.send(GameEvent.PlayVictoryFanfare)
@@ -501,8 +500,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         val nextLevel = currentLevelIndex + 1
         if (nextLevel >= Gameplay.LEVELS_PER_MODE) {
-            // Return to menu
-            returnToMenu()
+            // Mode completed — advance to next mode if available
+            val modeIndex = MODE_ORDER.indexOf(currentMode.id)
+            if (modeIndex < MODE_ORDER.size - 1) {
+                val nextModeId = MODE_ORDER[modeIndex + 1]
+                currentMode = GameMode.fromId(nextModeId)
+                startLevel(0, forceNew = true)
+            } else {
+                // Last mode (Illuminate) — return to menu
+                returnToMenu()
+            }
         } else {
             startLevel(nextLevel, forceNew = true)
         }

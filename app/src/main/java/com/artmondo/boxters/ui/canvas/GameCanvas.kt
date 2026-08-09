@@ -125,25 +125,25 @@ fun GameCanvas(
                             }
 
                             // Bottom nav buttons
-                            val navY = canvasSize.height - 160.dp.toPx()
-                            val navHitRadius = 30.dp.toPx()
+                            val navY = canvasSize.height - 200.dp.toPx()
+                            val navHitRadius = 39.dp.toPx()
 
                             // Share button
-                            val sharePos = Offset(canvasSize.width - 36.dp.toPx(), navY)
+                            val sharePos = Offset(canvasSize.width - 40.dp.toPx(), navY)
                             if ((pos - sharePos).getDistance() < navHitRadius) {
                                 onShare()
                                 return@awaitEachGesture
                             }
 
                             // Back arrow (left side)
-                            val backPos = Offset(36.dp.toPx(), navY)
+                            val backPos = Offset(40.dp.toPx(), navY)
                             if ((pos - backPos).getDistance() < navHitRadius) {
                                 onNavigateLevel(-1)
                                 return@awaitEachGesture
                             }
 
                             // Forward arrow (right of back)
-                            val fwdPos = Offset(100.dp.toPx(), navY)
+                            val fwdPos = Offset(110.dp.toPx(), navY)
                             if ((pos - fwdPos).getDistance() < navHitRadius) {
                                 onNavigateLevel(1)
                                 return@awaitEachGesture
@@ -854,33 +854,33 @@ private fun DrawScope.drawHud(
     drawLine(GameColors.uiText, Offset(arrowEndX, logoutY), Offset(arrowEndX - arrowHead, logoutY + arrowHead), strokeWidth = 2f * density, cap = StrokeCap.Round)
 
     // Bottom buttons: navigation arrows + share
-    val navBottomY = size.height - 160 * density
-    val navBtnRadius = 27f * density
+    val navBottomY = size.height - 200 * density
+    val navBtnRadius = 35f * density
 
     // Back arrow
     if (uiState.canGoBack) {
-        val backX = 36f * density
+        val backX = 40f * density
         drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(backX, navBottomY))
         val backText = textMeasurer.measure(
             AnnotatedString("◀"),
-            style = TextStyle(fontSize = 24.sp, color = GameColors.uiText)
+            style = TextStyle(fontSize = 31.sp, color = GameColors.uiText)
         )
         drawText(backText, topLeft = Offset(backX - backText.size.width / 2f, navBottomY - backText.size.height / 2f))
     }
 
     // Forward arrow
     if (uiState.canGoForward) {
-        val fwdX = 100f * density
+        val fwdX = 110f * density
         drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(fwdX, navBottomY))
         val fwdText = textMeasurer.measure(
             AnnotatedString("▶"),
-            style = TextStyle(fontSize = 24.sp, color = GameColors.uiText)
+            style = TextStyle(fontSize = 31.sp, color = GameColors.uiText)
         )
         drawText(fwdText, topLeft = Offset(fwdX - fwdText.size.width / 2f, navBottomY - fwdText.size.height / 2f))
     }
 
     // Share button
-    val shareX = size.width - 36f * density
+    val shareX = size.width - 40f * density
     drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(shareX, navBottomY))
     drawCircle(GameColors.uiAccent.copy(alpha = 0.5f), radius = navBtnRadius, center = Offset(shareX, navBottomY),
         style = Stroke(width = 1.5f * density))
