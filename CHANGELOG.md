@@ -2,6 +2,15 @@
 
 All notable changes to Boxters will be documented in this file.
 
+## [1.1.1] - 2026-08-10
+
+### Changed
+- Target Android 16 (API level 36)
+- Center-justified registration tagline on phones
+
+### Added
+- Dictionary: merch, glute, glutes
+
 ## [1.1.0] - 2026-08-09
 
 ### Added
