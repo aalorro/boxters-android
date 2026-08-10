@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.artmondo.boxters"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.artmondo.boxters"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 2
         versionName = "1.1.0"
     }
