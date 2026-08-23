@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.artmondo.boxters.audio.GameAudioManager
 import com.artmondo.boxters.data.model.*
 import com.artmondo.boxters.data.repository.DictionaryRepository
+import com.artmondo.boxters.data.repository.FirebaseRepository
 import com.artmondo.boxters.data.repository.LevelRepository
 import com.artmondo.boxters.data.repository.PlayerRepository
 import com.artmondo.boxters.domain.board.BoardGenerator
@@ -34,6 +35,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val events = _events.receiveAsFlow()
 
     private val playerRepository = PlayerRepository(application)
+    private val firebaseRepo = FirebaseRepository(application)
     val audioManager = GameAudioManager(application)
     val particleSystem = ParticleSystem()
 
@@ -51,6 +53,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private var victoryDelayTimer = 0f
     private var isVictoryClickable = false
     private var confettiTimer = 0f
+    private var isNewBest = false
+    private var prevLevelBest = 0
+    private var isInGauntlet = false
+    private var apexJustUnlocked = false
 
     init {
         // Load theme preference before anything renders
@@ -72,6 +78,28 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             // Load profile
             profile = playerRepository.loadProfile()
 
+            // Migrate existing profiles to per-level scoring
+            profile?.let { p ->
+                if (p.playerId.isEmpty()) {
+                    p.playerId = java.util.UUID.randomUUID().toString()
+                }
+                // Migration: if levelScores is empty but totalScore > 0, set baseScore
+                if (p.levelScores.isEmpty() && p.totalScore > 0) {
+                    p.baseScore = p.totalScore
+                }
+                // Anti-tamper: recompute totalScore from levelScores + baseScore
+                val recomputed = p.baseScore + p.levelScores.values.sum()
+                if (recomputed != p.totalScore) {
+                    p.totalScore = recomputed
+                }
+                if (p.levelScores.isNotEmpty()) {
+                    p.bestScore = p.levelScores.values.max()
+                }
+                // Restore gauntlet state
+                isInGauntlet = p.isInGauntlet
+                playerRepository.saveProfile(p)
+            }
+
             delay(Timing.LOADING_MIN_DISPLAY_MS.toLong())
 
             // Transition to menu
@@ -82,13 +110,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 dictionaryLoaded = true,
                 isRegistered = p != null,
                 playerName = p?.name ?: "",
+                playerId = p?.playerId ?: "",
                 playerStats = p?.let {
                     PlayerStats(it.gamesPlayed, it.levelsCompleted, it.bestScore)
                 },
                 unlockedModes = p?.unlockedModes?.map { GameMode.fromId(it) }
                     ?: listOf(GameMode.SIMPLE),
                 selectedMode = p?.let { GameMode.fromId(it.lastMode) } ?: GameMode.SIMPLE,
-                audioEnabled = audioManager.enabled
+                audioEnabled = audioManager.enabled,
+                gender = p?.gender ?: "",
+                ageGroup = p?.ageGroup ?: ""
             )
 
             // Check cooldown
@@ -99,6 +130,22 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                     cooldownUntil = p.cooldownUntil,
                     lives = p.lives
                 )
+            }
+
+            // Sync profile with Firebase (fire-and-forget)
+            if (p != null) {
+                launch {
+                    try {
+                        val changed = firebaseRepo.syncProfile(p)
+                        if (changed) {
+                            playerRepository.saveProfile(p)
+                            _uiState.value = _uiState.value.copy(
+                                totalScore = p.totalScore,
+                                playerStats = PlayerStats(p.gamesPlayed, p.levelsCompleted, p.bestScore)
+                            )
+                        }
+                    } catch (_: Exception) { /* sync failed silently */ }
+                }
             }
         }
     }
@@ -164,6 +211,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             levelIndex
         )
         val newBoard = BoardGenerator.generateBoard(levelData, dictionary, levelSeed)
+        newBoard.apexWeights = levelData.apexWeights
         board = newBoard
 
         // Init tracer
@@ -275,13 +323,19 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        // Check anchor constraint
+        // Check anchor constraint (in Apex mode, relaxed after anchor objective met)
         val hasAnchors = b.field.getAllCells().any { it.isAnchor }
         if (hasAnchors) {
-            val pathTouchesAnchor = result.path.any { it.isAnchor }
-            if (!pathTouchesAnchor) {
-                showFeedback("Must touch an anchor!")
-                return
+            val anchorObjectiveMet = b.mode == "apex" &&
+                objectiveTracker?.allObjectives
+                    ?.filter { it.type == "illuminateAnchors" }
+                    ?.all { it.completed } == true
+            if (!anchorObjectiveMet) {
+                val pathTouchesAnchor = result.path.any { it.isAnchor }
+                if (!pathTouchesAnchor) {
+                    showFeedback("Must touch an anchor!")
+                    return
+                }
             }
         }
 
@@ -321,8 +375,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             particleSystem.emitIlluminate(center.x + pixel.x, center.y + pixel.y)
         }
 
-        // Auto-clear isolated clusters in Clear mode
-        if (currentMode == GameMode.CLEAR) {
+        // Auto-clear isolated clusters in Clear mode or Apex clear effect
+        if (currentMode == GameMode.CLEAR || (currentMode == GameMode.APEX && b.lastApexEffect == "clear")) {
             val autoCleared = BoardGenerator.autoClearIsolated(b)
             for (coord in autoCleared) {
                 val pixel = HexMath.axialToPixel(coord.q, coord.r, hexSize)
@@ -375,23 +429,45 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val finalScore = ScoringEngine.calculateLevelScore(b, currentMode.id, objectiveTracker!!, levelData)
         val stars = ScoringEngine.getStars(finalScore, levelData)
 
-        p.totalScore += finalScore
-        if (finalScore > p.bestScore) p.bestScore = finalScore
+        // Per-level best score tracking
+        val levelId = levelData.id
+        prevLevelBest = p.levelScores[levelId] ?: 0
+        val cappedScore = minOf(finalScore, Gameplay.MAX_LEVEL_SCORE)
+        isNewBest = cappedScore > prevLevelBest
+        p.levelScores[levelId] = maxOf(prevLevelBest, cappedScore)
+
+        // Recompute totalScore from levelScores + baseScore (anti-tamper)
+        p.totalScore = p.baseScore + p.levelScores.values.sum()
+        p.bestScore = p.levelScores.values.maxOrNull() ?: 0
+
         p.levelsCompleted++
         p.gamesPlayed++
+
+        // Reset lives on victory
+        p.lives = Gameplay.MAX_LIVES
 
         // Advance level
         val nextLevel = currentLevelIndex + 1
         val isUltimate = nextLevel >= Gameplay.LEVELS_PER_MODE
 
         val isFirstModeCompletion = isUltimate && currentMode.id !in p.celebratedModes
+        var enterGauntlet = false
 
         if (isUltimate) {
             // Mode completion
             val modeIndex = MODE_ORDER.indexOf(currentMode.id)
             if (modeIndex < MODE_ORDER.size - 1) {
                 val nextMode = MODE_ORDER[modeIndex + 1]
-                if (nextMode !in p.unlockedModes) {
+                // Apex unlock requires score threshold
+                if (nextMode == "apex") {
+                    if (p.totalScore >= Gameplay.APEX_UNLOCK_SCORE) {
+                        if ("apex" !in p.unlockedModes) {
+                            p.unlockedModes.add("apex")
+                        }
+                    } else {
+                        enterGauntlet = true
+                    }
+                } else if (nextMode !in p.unlockedModes) {
                     p.unlockedModes.add(nextMode)
                 }
             }
@@ -408,9 +484,33 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             p.highestLevels[currentMode.id] = nextLevel
         }
 
+        // General Apex unlock check — works during gauntlet, replays, or any victory
+        apexJustUnlocked = false
+        if ("apex" !in p.unlockedModes &&
+            "illuminate" in p.celebratedModes &&
+            p.totalScore >= Gameplay.APEX_UNLOCK_SCORE) {
+            p.unlockedModes.add("apex")
+            if (isInGauntlet) {
+                isInGauntlet = false
+                p.isInGauntlet = false
+            }
+            apexJustUnlocked = true
+        }
+
+        // Handle gauntlet entry
+        if (enterGauntlet && !apexJustUnlocked) {
+            isInGauntlet = true
+            p.isInGauntlet = true
+        }
+
         p.lastMode = currentMode.id
         playerRepository.saveProfile(p)
         playerRepository.clearBoardSnapshot(currentMode.id)
+
+        // Submit score to Firebase (fire-and-forget)
+        viewModelScope.launch {
+            try { firebaseRepo.submitScore(p) } catch (_: Exception) {}
+        }
 
         gameState = GameState.VICTORY
         victoryDelayTimer = 0f
@@ -421,22 +521,43 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             GameMode.CLEAR -> "CLEARED"
             GameMode.CHAIN -> "CHAINED"
             GameMode.ILLUMINATE -> "ILLUMINATED"
+            GameMode.APEX -> "CONQUERED"
         }
         val ultimateTitle = when (currentMode) {
             GameMode.SIMPLE -> "WORD MASTER"
             GameMode.CLEAR -> "BOARD SWEEPER"
-            GameMode.CHAIN -> "COMBO KING"
-            GameMode.ILLUMINATE -> "LIGHT BRINGER"
+            GameMode.CHAIN -> "CHAIN LEGEND"
+            GameMode.ILLUMINATE -> "MASTER OF LIGHT"
+            GameMode.APEX -> "APEX LEGEND"
         }
+
+        // Apex completion check — show game complete screen
+        val isApexComplete = currentMode == GameMode.APEX && isUltimate && isFirstModeCompletion
+
+        val effectiveUltimate = isFirstModeCompletion || apexJustUnlocked
 
         _uiState.value = _uiState.value.copy(
             gameState = GameState.VICTORY,
             score = finalScore,
             totalScore = p.totalScore,
             stars = stars,
-            isUltimateVictory = isFirstModeCompletion,
-            victoryTitle = if (isFirstModeCompletion) ultimateTitle else victoryWord,
-            victorySubtitle = if (isFirstModeCompletion) "You've mastered ${currentMode.displayName} mode!" else ""
+            isUltimateVictory = effectiveUltimate,
+            isNewBest = isNewBest,
+            prevLevelBest = prevLevelBest,
+            isApexComplete = isApexComplete,
+            apexJustUnlocked = apexJustUnlocked,
+            isInGauntlet = isInGauntlet,
+            victoryTitle = when {
+                apexJustUnlocked -> "APEX UNLOCKED"
+                isFirstModeCompletion -> ultimateTitle
+                else -> victoryWord
+            },
+            victorySubtitle = when {
+                apexJustUnlocked -> "You've earned the right to play Apex mode!"
+                isApexComplete -> "You've mastered all five modes."
+                isFirstModeCompletion -> "You've mastered ${currentMode.displayName} mode!"
+                else -> ""
+            }
         )
 
         // Particle burst
@@ -446,17 +567,33 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         // Audio
         viewModelScope.launch {
-            if (isFirstModeCompletion) {
+            if (effectiveUltimate) {
                 _events.send(GameEvent.PlayUltimateVictory)
             } else {
                 _events.send(GameEvent.PlayVictoryFanfare)
             }
         }
 
-        // Enable clicking after delay
-        viewModelScope.launch {
-            delay(Timing.VICTORY_TRANSITION_DELAY_MS.toLong())
-            isVictoryClickable = true
+        // Confetti for celebrations
+        if (effectiveUltimate) {
+            confettiTimer = 0f
+        }
+
+        // For Apex completion, transition to GAME_COMPLETE after delay
+        if (isApexComplete) {
+            viewModelScope.launch {
+                delay(Timing.VICTORY_TRANSITION_DELAY_MS.toLong())
+                isVictoryClickable = true
+                gameState = GameState.GAME_COMPLETE
+                _uiState.value = _uiState.value.copy(gameState = GameState.GAME_COMPLETE)
+                _events.send(GameEvent.PlayPuzzleLoop)
+            }
+        } else {
+            // Enable clicking after delay
+            viewModelScope.launch {
+                delay(Timing.VICTORY_TRANSITION_DELAY_MS.toLong())
+                isVictoryClickable = true
+            }
         }
     }
 
@@ -467,12 +604,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         // Clear saved board — defeat means this board is done
         playerRepository.clearBoardSnapshot(currentMode.id)
 
-        // Find solution words
-        val solutions = b.field.findWordsWithPaths(dictionary, Gameplay.MAX_SOLUTION_WORDS)
+        // Find solution words (more for illuminate/apex)
+        val maxSolutions = if (currentMode == GameMode.ILLUMINATE || currentMode == GameMode.APEX) 12 else Gameplay.MAX_SOLUTION_WORDS
+        val solutions = b.field.findWordsWithPaths(dictionary, maxSolutions)
         val solutionWords = solutions.map { SolutionWord(it.word, it.path) }
 
         p.lives--
         p.gamesPlayed++
+        p.lives = maxOf(p.lives, 0)
 
         if (p.lives <= 0) {
             // Game over
@@ -504,21 +643,83 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun onVictoryTapped() {
         if (!isVictoryClickable) return
 
+        // Apex unlock celebration → go to menu with Apex available
+        if (apexJustUnlocked) {
+            apexJustUnlocked = false
+            returnToMenu()
+            return
+        }
+
+        // Gauntlet mode — load next random gauntlet level
+        if (isInGauntlet) {
+            loadGauntletLevel()
+            return
+        }
+
         val nextLevel = currentLevelIndex + 1
         if (nextLevel >= Gameplay.LEVELS_PER_MODE) {
             // Mode completed — advance to next mode if available
             val modeIndex = MODE_ORDER.indexOf(currentMode.id)
             if (modeIndex < MODE_ORDER.size - 1) {
                 val nextModeId = MODE_ORDER[modeIndex + 1]
-                currentMode = GameMode.fromId(nextModeId)
-                startLevel(0, forceNew = true)
+                if (nextModeId == "apex" && "apex" !in (profile?.unlockedModes ?: emptyList())) {
+                    // Apex not yet unlocked, gauntlet should handle this
+                    if (isInGauntlet) {
+                        loadGauntletLevel()
+                    } else {
+                        returnToMenu()
+                    }
+                } else {
+                    currentMode = GameMode.fromId(nextModeId)
+                    startLevel(0, forceNew = true)
+                }
             } else {
-                // Last mode (Illuminate) — return to menu
+                // Last mode completed — return to menu
                 returnToMenu()
             }
         } else {
             startLevel(nextLevel, forceNew = true)
         }
+    }
+
+    fun onGameCompleteAction(action: String) {
+        // Stop puzzle music
+        viewModelScope.launch { _events.send(GameEvent.StopPuzzleLoop) }
+
+        when (action) {
+            "play_any" -> returnToMenu()
+            "random" -> loadRandomChallenge()
+        }
+    }
+
+    private fun loadGauntletLevel() {
+        val modes = listOf("simple", "clear", "chain", "illuminate")
+        val randomMode = modes.random()
+        val modeLevels = LevelRepository.getLevelsForMode(randomMode)
+        // Pick levels 7-14 (indices 6-13) within the mode
+        val highLevels = modeLevels.filterIndexed { i, _ -> i >= 6 }
+        if (highLevels.isEmpty()) return
+        val level = highLevels.random()
+        val absoluteIndex = LevelRepository.LEVEL_DATA.indexOf(level)
+        if (absoluteIndex < 0) return
+        currentMode = GameMode.fromId(randomMode)
+        currentLevelIndex = absoluteIndex - LevelRepository.getFirstLevelForMode(randomMode)
+        startLevel(currentLevelIndex, forceNew = true)
+    }
+
+    private fun loadRandomChallenge() {
+        val modes = listOf("simple", "clear", "chain", "illuminate", "apex")
+        val randomMode = modes.random()
+        val modeLevels = LevelRepository.getLevelsForMode(randomMode)
+        // Pick levels 6+ (indices 5+) from any mode
+        val highLevels = modeLevels.filterIndexed { i, _ -> i >= 5 }
+        if (highLevels.isEmpty()) return
+        val level = highLevels.random()
+        val absoluteIndex = LevelRepository.LEVEL_DATA.indexOf(level)
+        if (absoluteIndex < 0) return
+        currentMode = GameMode.fromId(randomMode)
+        currentLevelIndex = absoluteIndex - LevelRepository.getFirstLevelForMode(randomMode)
+        startLevel(currentLevelIndex, forceNew = true)
     }
 
     fun onDefeatContinue() {
@@ -549,8 +750,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         p.cooldownUntil = 0
         playerRepository.saveProfile(p)
 
-        // Restart level
-        startLevel(currentLevelIndex, forceNew = true)
+        // If in gauntlet, load gauntlet level instead of restarting
+        if (isInGauntlet) {
+            loadGauntletLevel()
+        } else {
+            startLevel(currentLevelIndex, forceNew = true)
+        }
     }
 
     fun onSolutionWordSelected(path: List<HexCoord>) {
@@ -562,6 +767,79 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun onToggleSound() {
         audioManager.toggle()
         _uiState.value = _uiState.value.copy(audioEnabled = audioManager.enabled)
+    }
+
+    fun fetchLeaderboard() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(leaderboardLoading = true)
+            try {
+                val entries = firebaseRepo.fetchLeaderboard()
+                val playerId = profile?.playerId ?: ""
+                val rank = firebaseRepo.findPlayerRank(entries, playerId)
+                _uiState.value = _uiState.value.copy(
+                    leaderboard = entries,
+                    playerRank = rank,
+                    leaderboardLoading = false
+                )
+            } catch (_: Exception) {
+                val cached = firebaseRepo.getCachedLeaderboard()
+                val playerId = profile?.playerId ?: ""
+                val rank = firebaseRepo.findPlayerRank(cached, playerId)
+                _uiState.value = _uiState.value.copy(
+                    leaderboard = cached,
+                    playerRank = rank,
+                    leaderboardLoading = false
+                )
+            }
+        }
+    }
+
+    fun onGenderChanged(gender: String) {
+        val p = profile ?: return
+        p.gender = gender
+        playerRepository.saveProfile(p)
+        _uiState.value = _uiState.value.copy(gender = gender)
+    }
+
+    fun onAgeGroupChanged(ageGroup: String) {
+        val p = profile ?: return
+        p.ageGroup = ageGroup
+        playerRepository.saveProfile(p)
+        _uiState.value = _uiState.value.copy(ageGroup = ageGroup)
+    }
+
+    fun onExportProfile(): String? {
+        val p = profile ?: return null
+        return try {
+            val json = kotlinx.serialization.json.Json.encodeToString(PlayerProfile.serializer(), p)
+            val salt = "bxp_k7m2q9w4"
+            val hash = java.security.MessageDigest.getInstance("SHA-256")
+                .digest("$json$salt".toByteArray())
+                .joinToString("") { "%02x".format(it) }
+            val payload = "$json|$hash"
+            android.util.Base64.encodeToString(payload.toByteArray(), android.util.Base64.NO_WRAP)
+        } catch (_: Exception) { null }
+    }
+
+    fun onImportProfile(encoded: String): Boolean {
+        return try {
+            val decoded = String(android.util.Base64.decode(encoded.trim(), android.util.Base64.NO_WRAP))
+            val parts = decoded.split("|")
+            if (parts.size != 2) return false
+            val json = parts[0]
+            val hash = parts[1]
+            val salt = "bxp_k7m2q9w4"
+            val expectedHash = java.security.MessageDigest.getInstance("SHA-256")
+                .digest("$json$salt".toByteArray())
+                .joinToString("") { "%02x".format(it) }
+            if (hash != expectedHash) return false
+            val imported = kotlinx.serialization.json.Json.decodeFromString(PlayerProfile.serializer(), json)
+            profile = imported
+            playerRepository.saveProfile(imported)
+            isInGauntlet = imported.isInGauntlet
+            returnToMenu()
+            true
+        } catch (_: Exception) { false }
     }
 
     fun onToggleTheme() {
@@ -702,8 +980,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        // Update confetti during ultimate victory
-        if (gameState == GameState.VICTORY && _uiState.value.isUltimateVictory) {
+        // Update confetti during ultimate victory or game complete
+        if ((gameState == GameState.VICTORY && _uiState.value.isUltimateVictory) ||
+            gameState == GameState.GAME_COMPLETE) {
             confettiTimer += dt
             if (confettiTimer >= Timing.CONFETTI_INTERVAL_MS / 1000f) {
                 confettiTimer = 0f
@@ -773,6 +1052,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         } else 0
         val cellsRemaining = allCells.count { it.isActive && !it.isCleared }
 
+        // Per-level best for HUD
+        val levelBest = profile?.levelScores?.get(levelData.id) ?: 0
+
         _uiState.value = _uiState.value.copy(
             gameState = gameState,
             cells = cells,
@@ -792,6 +1074,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             percentLit = percentLit,
             cellsRemaining = cellsRemaining,
             lastWordCellKeys = b.lastWordCellKeys.toSet(),
+            lastApexEffect = b.lastApexEffect,
+            levelBest = levelBest,
+            isInGauntlet = isInGauntlet,
             hasMovesInProgress = b.moveHistory.isNotEmpty(),
             canGoBack = currentLevelIndex > 0 && b.moveHistory.isEmpty(),
             canGoForward = run {

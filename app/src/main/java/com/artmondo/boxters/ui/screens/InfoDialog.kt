@@ -153,7 +153,7 @@ private fun AboutContent() {
             color = GameColors.uiTextDim
         )
         InfoText(
-            "Version 1.1.1",
+            "Version 2.0.0",
             color = GameColors.uiTextDim
         )
     }
@@ -226,10 +226,10 @@ private fun PrivacyContent() {
         InfoText("Boxters is committed to protecting your privacy. This policy explains what data is stored, how it is used, and your rights regarding that data.")
 
         InfoHeader("Data Collection")
-        InfoText("Boxters does not collect, transmit, or share any personal information.")
-        BulletPoint("No personal data is collected, processed, or sent to any server.")
+        InfoText("Boxters collects minimal data to support the leaderboard feature:")
+        BulletPoint("Your player name and game scores are synced to Firebase Firestore for the global leaderboard.")
+        BulletPoint("Gender and age group are optionally stored if you choose to provide them in Settings.")
         BulletPoint("No advertising SDKs are integrated.")
-        BulletPoint("No account creation or internet connection is required to play.")
         BulletPoint("No analytics or tracking tools are used in this app.")
 
         InfoHeader("Contact Form")
@@ -237,10 +237,14 @@ private fun PrivacyContent() {
 
         InfoHeader("Local Storage")
         InfoText("Your game progress (player name, scores, level progress, and settings) is stored locally on your device using SharedPreferences. This data:")
-        BulletPoint("Never leaves your device.")
         BulletPoint("Is accessible only to you within this app.")
-        BulletPoint("Is not shared across devices or apps.")
         BulletPoint("Can be cleared at any time (see below).")
+
+        InfoHeader("Cloud Storage")
+        InfoText("When connected to the internet, your player name, scores, and game progress are synced to Firebase Firestore to power the global leaderboard. This data:")
+        BulletPoint("Is associated with an anonymous player ID (no email or login required).")
+        BulletPoint("Is visible to other players on the leaderboard (name and scores only).")
+        BulletPoint("Can be deleted by contacting us via the Contact tab.")
 
         InfoHeader("Your Rights")
         InfoText("You have full control over your data:")

@@ -7,6 +7,8 @@ activityCompose = "1.9.3"
 composeBom = "2024.12.01"
 serialization = "1.7.3"
 coroutines = "1.9.0"
+firebaseBom = "33.7.0"
+gmsPlugin = "4.4.2"
 junit = "4.13.2"
 
 [libraries]
@@ -23,6 +25,8 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]
@@ -30,3 +34,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+gms-google-services = { id = "com.google.gms.google-services", version.ref = "gmsPlugin" }

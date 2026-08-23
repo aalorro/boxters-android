@@ -25,6 +25,8 @@ fun GameScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var showInfoDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
+    var showLeaderboard by remember { mutableStateOf(false) }
 
     // Save board state when app goes to background
     DisposableEffect(lifecycleOwner) {
@@ -61,6 +63,8 @@ fun GameScreen(
                 is GameEvent.PlayVictoryFanfare -> viewModel.audioManager.playVictory()
                 is GameEvent.PlayUltimateVictory -> viewModel.audioManager.playUltimateVictory()
                 is GameEvent.PlayFail -> viewModel.audioManager.playFail()
+                is GameEvent.PlayPuzzleLoop -> viewModel.audioManager.playPuzzleLoop()
+                is GameEvent.StopPuzzleLoop -> viewModel.audioManager.stopPuzzleLoop()
                 is GameEvent.ShowFeedback -> {} // Handled via uiState
                 is GameEvent.CopyToClipboard -> {
                     val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
@@ -85,7 +89,12 @@ fun GameScreen(
                         onPlay = viewModel::onPlayClicked,
                         onToggleSound = viewModel::onToggleSound,
                         onToggleTheme = viewModel::onToggleTheme,
-                        onInfoClicked = { showInfoDialog = true }
+                        onInfoClicked = { showInfoDialog = true },
+                        onSettingsClicked = { showSettingsDialog = true },
+                        onLeaderboardClicked = {
+                            showLeaderboard = true
+                            viewModel.fetchLeaderboard()
+                        }
                     )
                 }
             }
@@ -110,13 +119,53 @@ fun GameScreen(
                     },
                     onNavigateLevel = viewModel::onNavigateLevel,
                     onSolutionWordSelected = viewModel::onSolutionWordSelected,
-                    onFrame = viewModel::onFrame
+                    onFrame = viewModel::onFrame,
+                    onGameCompleteAction = viewModel::onGameCompleteAction
                 )
             }
         }
 
         if (showInfoDialog) {
             InfoDialog(onDismiss = { showInfoDialog = false })
+        }
+
+        if (showSettingsDialog) {
+            SettingsDialog(
+                playerName = uiState.playerName,
+                isDarkMode = uiState.isDarkMode,
+                gender = uiState.gender,
+                ageGroup = uiState.ageGroup,
+                onToggleTheme = viewModel::onToggleTheme,
+                onGenderChanged = viewModel::onGenderChanged,
+                onAgeGroupChanged = viewModel::onAgeGroupChanged,
+                onExportProfile = {
+                    val encoded = viewModel.onExportProfile()
+                    if (encoded != null) {
+                        val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
+                        clipboard?.setPrimaryClip(
+                            android.content.ClipData.newPlainText("Boxters Profile", encoded)
+                        )
+                    }
+                },
+                onImportProfile = {
+                    val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
+                    val text = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()
+                    if (text != null) {
+                        viewModel.onImportProfile(text)
+                    }
+                },
+                onDismiss = { showSettingsDialog = false }
+            )
+        }
+
+        if (showLeaderboard) {
+            LeaderboardDialog(
+                entries = uiState.leaderboard,
+                playerRank = uiState.playerRank,
+                playerId = uiState.playerId,
+                isLoading = uiState.leaderboardLoading,
+                onDismiss = { showLeaderboard = false }
+            )
         }
     }
 }

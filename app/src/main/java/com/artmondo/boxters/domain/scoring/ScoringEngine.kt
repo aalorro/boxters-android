@@ -16,7 +16,7 @@ object ScoringEngine {
         for (ch in word.uppercase()) {
             letterScore += LetterValues.valueOf(ch)
         }
-        if (tier == "chain" && comboCount > 0) {
+        if ((tier == "chain" || tier == "apex") && comboCount > 0) {
             val comboMult = Combo.MULTIPLIERS[min(comboCount, Combo.MAX_COMBO)]
             letterScore = floor(letterScore * comboMult).toInt()
         }

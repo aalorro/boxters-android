@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.media.MediaPlayer
 import android.media.SoundPool
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -139,11 +140,39 @@ class GameAudioManager(private val context: Context) {
         playUltimateVictoryFanfare()
     }
 
+    private var puzzlePlayer: MediaPlayer? = null
+
+    fun playPuzzleLoop() {
+        if (!enabled || !initialized) return
+        stopPuzzleLoop()
+        try {
+            val afd = context.assets.openFd("sfx/puzzle.mp3")
+            puzzlePlayer = MediaPlayer().apply {
+                setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                afd.close()
+                isLooping = true
+                setVolume(0.15f, 0.15f)
+                prepare()
+                start()
+            }
+        } catch (_: Exception) { /* puzzle.mp3 not found or playback error */ }
+    }
+
+    fun stopPuzzleLoop() {
+        puzzlePlayer?.let {
+            try { it.stop() } catch (_: Exception) {}
+            it.release()
+        }
+        puzzlePlayer = null
+    }
+
     fun toggle() {
         enabled = !enabled
+        if (!enabled) stopPuzzleLoop()
     }
 
     fun release() {
+        stopPuzzleLoop()
         soundPool?.release()
         soundPool = null
         initialized = false

@@ -29,7 +29,9 @@ fun WelcomeScreen(
     onPlay: () -> Unit,
     onToggleSound: () -> Unit,
     onToggleTheme: () -> Unit,
-    onInfoClicked: () -> Unit
+    onInfoClicked: () -> Unit,
+    onSettingsClicked: () -> Unit = {},
+    onLeaderboardClicked: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -95,6 +97,34 @@ fun WelcomeScreen(
             ) {
                 Text(
                     text = if (uiState.isDarkMode) "\u2600\uFE0F" else "\uD83C\uDF19",
+                    fontSize = 20.sp
+                )
+            }
+            // Settings gear button
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(GameColors.uiPanel, RoundedCornerShape(22.dp))
+                    .border(1.dp, GameColors.uiAccent.copy(alpha = 0.5f), RoundedCornerShape(22.dp))
+                    .clickable { onSettingsClicked() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "\u2699\uFE0F",
+                    fontSize = 20.sp
+                )
+            }
+            // Trophy button — leaderboard
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(GameColors.uiPanel, RoundedCornerShape(22.dp))
+                    .border(1.dp, GameColors.uiAccent.copy(alpha = 0.5f), RoundedCornerShape(22.dp))
+                    .clickable { onLeaderboardClicked() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "\uD83C\uDFC6",
                     fontSize = 20.sp
                 )
             }
@@ -170,9 +200,9 @@ fun WelcomeScreen(
                             .clickable(enabled = isUnlocked) { onModeSelected(mode) }
                     ) {
                         Text(
-                            text = if (isUnlocked) mode.displayName else "\uD83D\uDD12",
+                            text = if (isUnlocked) "${modeEmoji(mode)} ${mode.displayName}" else "\uD83D\uDD12",
                             style = GameTypography.modeBadge.copy(
-                                fontSize = 13.sp,
+                                fontSize = 11.sp,
                                 color = if (isSelected) GameColors.backgroundDark else GameColors.uiText
                             )
                         )
@@ -202,6 +232,14 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.weight(1f))
         }
     }
+}
+
+private fun modeEmoji(mode: GameMode): String = when (mode) {
+    GameMode.SIMPLE -> "\uD83C\uDF31"
+    GameMode.CLEAR -> "\uD83E\uDDF9"
+    GameMode.CHAIN -> "\uD83D\uDD17"
+    GameMode.ILLUMINATE -> "\uD83D\uDCA1"
+    GameMode.APEX -> "\uD83D\uDC51"
 }
 
 @Composable

@@ -9,4 +9,6 @@ sealed class GameEvent {
     data object PlayFail : GameEvent()
     data class ShowFeedback(val message: String) : GameEvent()
     data class CopyToClipboard(val text: String) : GameEvent()
+    data object PlayPuzzleLoop : GameEvent()
+    data object StopPuzzleLoop : GameEvent()
 }

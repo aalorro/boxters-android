@@ -2,6 +2,7 @@ package com.artmondo.boxters.data.model
 
 import com.artmondo.boxters.domain.board.LetterGenerator
 import com.artmondo.boxters.util.Combo
+import kotlin.random.Random
 
 data class Move(val word: String, val path: List<HexCoord>)
 
@@ -19,6 +20,8 @@ class Board {
     var mode: String = "simple"
     var comboCount: Int = 0
     val lastWordCellKeys: MutableSet<String> = mutableSetOf()
+    var apexWeights: ApexWeights? = null
+    var lastApexEffect: String? = null
 
     fun executeMove(word: String, path: List<HexCell>): MoveResult {
         moveHistory.add(Move(word, path.map { HexCoord(it.q, it.r) }))
@@ -74,6 +77,62 @@ class Board {
                     illuminated.add(HexCoord(cell.q, cell.r))
                 }
             }
+            "apex" -> {
+                // Pick random effect based on weights or uniform 1/3
+                val chosenEffect = apexWeights?.let { w ->
+                    val r = Random.nextFloat()
+                    when {
+                        r < w.clear -> "clear"
+                        r < w.clear + w.chain -> "chain"
+                        else -> "illuminate"
+                    }
+                } ?: listOf("clear", "chain", "illuminate").random()
+                lastApexEffect = chosenEffect
+
+                // All tiles are always illuminated first (counts toward % lit)
+                for (cell in path) {
+                    cell.isIlluminated = true
+                    cell.glowIntensity = 1.0f
+                }
+
+                // Then apply the random effect on top
+                when (chosenEffect) {
+                    "clear" -> {
+                        for (cell in path) {
+                            if (cell.isAnchor) {
+                                // Anchor cells can't be cleared — stay illuminated
+                                illuminated.add(HexCoord(cell.q, cell.r))
+                            } else {
+                                cleared.add(HexCoord(cell.q, cell.r))
+                                cell.letter = null
+                                cell.isCleared = true
+                                cell.isActive = false
+                            }
+                        }
+                    }
+                    "chain" -> {
+                        val currentKeys = path.map { it.key }.toSet()
+                        val hasOverlap = currentKeys.any { it in lastWordCellKeys }
+                        if (hasOverlap && lastWordCellKeys.isNotEmpty()) {
+                            comboCount = minOf(comboCount + 1, Combo.MAX_COMBO)
+                        } else {
+                            comboCount = 0
+                        }
+                        lastWordCellKeys.clear()
+                        lastWordCellKeys.addAll(currentKeys)
+                        for (cell in path) {
+                            val newLetter = LetterGenerator.randomLetter()
+                            cell.letter = newLetter
+                            replaced.add(Pair(HexCoord(cell.q, cell.r), newLetter))
+                        }
+                    }
+                    "illuminate" -> {
+                        for (cell in path) {
+                            illuminated.add(HexCoord(cell.q, cell.r))
+                        }
+                    }
+                }
+            }
         }
 
         return MoveResult(cleared, replaced, illuminated)
@@ -84,5 +143,6 @@ class Board {
         movesRemaining = maxMoves
         comboCount = 0
         lastWordCellKeys.clear()
+        lastApexEffect = null
     }
 }

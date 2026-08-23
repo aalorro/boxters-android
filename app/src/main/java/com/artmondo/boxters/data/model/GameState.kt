@@ -9,5 +9,8 @@ enum class GameState {
     VICTORY,
     DEFEAT,
     GAME_OVER,
-    COOLDOWN
+    COOLDOWN,
+    GAUNTLET_INTRO,
+    APEX_UNLOCK,
+    GAME_COMPLETE
 }

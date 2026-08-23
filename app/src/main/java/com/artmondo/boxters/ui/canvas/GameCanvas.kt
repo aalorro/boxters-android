@@ -52,6 +52,7 @@ fun GameCanvas(
     onLoad: () -> Unit,
     onNavigateLevel: (Int) -> Unit,
     onSolutionWordSelected: (List<HexCoord>) -> Unit,
+    onGameCompleteAction: (String) -> Unit = {},
     onFrame: (Float) -> Unit
 ) {
     val density = LocalDensity.current
@@ -105,7 +106,7 @@ fun GameCanvas(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(uiState.gameState) {
-                    if (uiState.gameState == GameState.PLAYING) {
+                    if (uiState.gameState == GameState.PLAYING || uiState.gameState == GameState.GAUNTLET_INTRO) {
                         awaitEachGesture {
                             val down = awaitFirstDown()
                             down.consume()
@@ -220,6 +221,32 @@ fun GameCanvas(
                                 onCooldownTapped()
                             }
                         }
+                    } else if (uiState.gameState == GameState.APEX_UNLOCK) {
+                        awaitEachGesture {
+                            awaitFirstDown().consume()
+                            onVictoryTapped()
+                        }
+                    } else if (uiState.gameState == GameState.GAME_COMPLETE) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown()
+                            down.consume()
+                            val pos = down.position
+                            val cx = canvasSize.width / 2f
+                            val btnW = 200.dp.toPx()
+                            val btnH = 48.dp.toPx()
+                            val btn1Y = canvasSize.height * 0.62f
+                            val btn2Y = btn1Y + btnH + 16.dp.toPx()
+                            // "Play Any Level" button
+                            if (pos.x in (cx - btnW / 2f)..(cx + btnW / 2f) &&
+                                pos.y in btn1Y..(btn1Y + btnH)) {
+                                onGameCompleteAction("play_any")
+                            }
+                            // "Random Challenge" button
+                            else if (pos.x in (cx - btnW / 2f)..(cx + btnW / 2f) &&
+                                pos.y in btn2Y..(btn2Y + btnH)) {
+                                onGameCompleteAction("random")
+                            }
+                        }
                     }
                 }
         ) {
@@ -315,11 +342,20 @@ fun GameCanvas(
 
             // Draw overlays
             when (uiState.gameState) {
-                GameState.VICTORY -> drawVictoryOverlay(uiState, textMeasurer, density.density, time)
+                GameState.VICTORY -> {
+                    if (uiState.apexJustUnlocked) {
+                        drawApexUnlockOverlay(textMeasurer, density.density, time)
+                    } else {
+                        drawVictoryOverlay(uiState, textMeasurer, density.density, time)
+                    }
+                }
+                GameState.APEX_UNLOCK -> drawApexUnlockOverlay(textMeasurer, density.density, time)
+                GameState.GAME_COMPLETE -> drawGameCompleteOverlay(uiState, textMeasurer, density.density, time)
                 GameState.DEFEAT, GameState.GAME_OVER -> drawDefeatOverlay(uiState, textMeasurer, density.density)
                 GameState.COOLDOWN -> {
                     cooldownInfoBtnY = drawCooldownOverlay(uiState, textMeasurer, density.density)
                 }
+                GameState.GAUNTLET_INTRO -> {} // Treated as PLAYING, transitions quickly
                 else -> {}
             }
 
@@ -561,8 +597,8 @@ private fun DrawScope.drawHexCell(
         drawPath(path, GameColors.illuminateLit)
     }
 
-    // Chain mode last-word pulse
-    if (isLastWordCell && mode == GameMode.CHAIN) {
+    // Chain mode last-word pulse (also in Apex when chain effect active)
+    if (isLastWordCell && (mode == GameMode.CHAIN || mode == GameMode.APEX)) {
         val pulseAlpha = 0.15f + 0.1f * sin(time * 4f)
         drawPath(path, Color(0xFF60A5FA).copy(alpha = pulseAlpha))
     }
@@ -732,6 +768,7 @@ private fun DrawScope.drawHud(
         GameMode.CLEAR -> GameColors.clearAccent
         GameMode.CHAIN -> GameColors.chainAccent
         GameMode.ILLUMINATE -> GameColors.illuminateAccent
+        GameMode.APEX -> GameColors.apexAccent
     }
     val badgeText = textMeasurer.measure(
         AnnotatedString(modeBadge),
@@ -743,6 +780,22 @@ private fun DrawScope.drawHud(
         )
     )
     drawText(badgeText, topLeft = Offset(leftPadding, topPadding + levelText.size.height + 4 * density))
+
+    // Best score label
+    if (uiState.levelBest > 0) {
+        val bestLabelText = textMeasurer.measure(
+            AnnotatedString("Best: ${uiState.levelBest}"),
+            style = TextStyle(
+                fontFamily = InterFontFamily,
+                fontSize = if (isPhone) 11.sp else 13.sp,
+                color = GameColors.uiTextDim
+            )
+        )
+        drawText(bestLabelText, topLeft = Offset(
+            leftPadding + badgeText.size.width + 12 * density,
+            topPadding + levelText.size.height + 4 * density + (badgeText.size.height - bestLabelText.size.height) / 2f
+        ))
+    }
 
     // Lives, Moves, Score row
     val statsY = topPadding + levelText.size.height + badgeText.size.height + 12 * density
@@ -818,8 +871,10 @@ private fun DrawScope.drawHud(
     // Mode-specific HUD
     val modeHudY = statsY + movesText.size.height + movesLabel.size.height + 6 * density
     val comboSize = if (isPhone) 16.sp else 21.sp
+    var modeHudOffset = 0f
     when (uiState.mode) {
-        GameMode.CHAIN -> {
+        GameMode.CHAIN, GameMode.APEX -> {
+            // Combo display for Chain and Apex modes
             if (uiState.comboCount > 0) {
                 val comboText = textMeasurer.measure(
                     AnnotatedString("${uiState.comboMultiplier}x COMBO"),
@@ -830,7 +885,42 @@ private fun DrawScope.drawHud(
                         color = GameColors.chainCombo
                     )
                 )
-                drawText(comboText, topLeft = Offset(centerX - comboText.size.width / 2f, modeHudY))
+                drawText(comboText, topLeft = Offset(centerX - comboText.size.width / 2f, modeHudY + modeHudOffset))
+                modeHudOffset += comboText.size.height + 4 * density
+            }
+            // % Lit display for Apex mode (stacked below combo)
+            if (uiState.mode == GameMode.APEX) {
+                val litText = textMeasurer.measure(
+                    AnnotatedString("${uiState.percentLit}% Lit"),
+                    style = TextStyle(
+                        fontFamily = InterFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = modeHudSize,
+                        color = GameColors.illuminateAccent
+                    )
+                )
+                drawText(litText, topLeft = Offset(centerX - litText.size.width / 2f, modeHudY + modeHudOffset))
+                modeHudOffset += litText.size.height + 4 * density
+
+                // Apex effect indicator
+                uiState.lastApexEffect?.let { effect ->
+                    val (effectLabel, effectColor) = when (effect) {
+                        "clear" -> "CLEAR" to GameColors.clearAccent
+                        "chain" -> "CHAIN" to GameColors.chainAccent
+                        "illuminate" -> "ILLUMINATE" to GameColors.illuminateAccent
+                        else -> effect.uppercase() to GameColors.uiTextDim
+                    }
+                    val effectText = textMeasurer.measure(
+                        AnnotatedString(effectLabel),
+                        style = TextStyle(
+                            fontFamily = CinzelFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = if (isPhone) 13.sp else 16.sp,
+                            color = effectColor
+                        )
+                    )
+                    drawText(effectText, topLeft = Offset(centerX - effectText.size.width / 2f, modeHudY + modeHudOffset))
+                }
             }
         }
         GameMode.ILLUMINATE -> {
@@ -1116,9 +1206,37 @@ private fun DrawScope.drawVictoryOverlay(
     )
     drawText(scoreText, topLeft = Offset(centerX - scoreText.size.width / 2f, scoreY))
 
+    // Per-level best score feedback
+    val bestFeedbackY = scoreY + scoreText.size.height + 8 * density
+    if (uiState.isNewBest) {
+        val addedScore = if (uiState.prevLevelBest > 0) uiState.score - uiState.prevLevelBest else uiState.score
+        val bestMsg = "New best! +$addedScore added to total"
+        val bestFeedback = textMeasurer.measure(
+            AnnotatedString(bestMsg),
+            style = TextStyle(
+                fontFamily = InterFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp,
+                color = GameColors.uiSuccess
+            )
+        )
+        drawText(bestFeedback, topLeft = Offset(centerX - bestFeedback.size.width / 2f, bestFeedbackY))
+    } else if (uiState.prevLevelBest > 0) {
+        val beatMsg = "Beat your best of ${uiState.prevLevelBest} to increase total"
+        val beatFeedback = textMeasurer.measure(
+            AnnotatedString(beatMsg),
+            style = TextStyle(
+                fontFamily = InterFontFamily,
+                fontSize = 14.sp,
+                color = GameColors.uiTextDim
+            )
+        )
+        drawText(beatFeedback, topLeft = Offset(centerX - beatFeedback.size.width / 2f, bestFeedbackY))
+    }
+
     // Subtitle
     if (uiState.victorySubtitle.isNotEmpty()) {
-        val subY = scoreY + scoreText.size.height + 12 * density
+        val subY = bestFeedbackY + 24 * density
         val subText = textMeasurer.measure(
             AnnotatedString(uiState.victorySubtitle),
             style = TextStyle(fontSize = 18.sp, color = GameColors.uiTextDim)
@@ -1243,4 +1361,202 @@ private fun DrawScope.drawFeedbackMessage(
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(20 * density)
     )
     drawText(text, topLeft = Offset(centerX - text.size.width / 2f, y))
+}
+
+private fun DrawScope.drawApexUnlockOverlay(
+    textMeasurer: TextMeasurer,
+    density: Float,
+    time: Float
+) {
+    // Purple-tinted overlay
+    drawRect(Color(0xFF1A0A2E).copy(alpha = 0.85f))
+
+    val centerX = size.width / 2f
+    val centerY = size.height * 0.38f
+
+    // Pulsing glow
+    val glowAlpha = 0.15f + 0.1f * sin(time * 2f)
+    drawCircle(
+        color = GameColors.apexAccent.copy(alpha = glowAlpha),
+        radius = size.width * 0.4f,
+        center = Offset(centerX, centerY + 40 * density)
+    )
+
+    // Title
+    val titleText = textMeasurer.measure(
+        AnnotatedString("APEX MODE"),
+        style = TextStyle(
+            fontFamily = CinzelFontFamily,
+            fontWeight = FontWeight.Black,
+            fontSize = 40.sp,
+            color = GameColors.apexAccent
+        )
+    )
+    drawText(titleText, topLeft = Offset(centerX - titleText.size.width / 2f, centerY))
+
+    val subtitleText = textMeasurer.measure(
+        AnnotatedString("UNLOCKED"),
+        style = TextStyle(
+            fontFamily = CinzelFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 28.sp,
+            color = GameColors.apexAccent.copy(alpha = 0.8f)
+        )
+    )
+    drawText(subtitleText, topLeft = Offset(
+        centerX - subtitleText.size.width / 2f,
+        centerY + titleText.size.height + 8 * density
+    ))
+
+    // Description
+    val descText = textMeasurer.measure(
+        AnnotatedString("All three effects. One mode. No mercy."),
+        style = TextStyle(
+            fontFamily = InterFontFamily,
+            fontSize = 16.sp,
+            color = GameColors.uiTextDim
+        )
+    )
+    drawText(descText, topLeft = Offset(
+        centerX - descText.size.width / 2f,
+        centerY + titleText.size.height + subtitleText.size.height + 32 * density
+    ))
+
+    // Tap to continue
+    val tapAlpha = 0.5f + 0.5f * sin(time * 2f)
+    val tapText = textMeasurer.measure(
+        AnnotatedString("Tap anywhere to continue"),
+        style = TextStyle(fontSize = 18.sp, color = GameColors.uiText.copy(alpha = tapAlpha))
+    )
+    drawText(tapText, topLeft = Offset(centerX - tapText.size.width / 2f, size.height * 0.75f))
+}
+
+private fun DrawScope.drawGameCompleteOverlay(
+    uiState: GameUiState,
+    textMeasurer: TextMeasurer,
+    density: Float,
+    time: Float
+) {
+    // Dark overlay with gold tint
+    drawRect(Color.Black.copy(alpha = 0.85f))
+
+    val centerX = size.width / 2f
+    val centerY = size.height * 0.2f
+
+    // Gold glow
+    val glowAlpha = 0.1f + 0.08f * sin(time * 1.5f)
+    drawCircle(
+        color = GameColors.uiAccent.copy(alpha = glowAlpha),
+        radius = size.width * 0.5f,
+        center = Offset(centerX, size.height * 0.4f)
+    )
+
+    // Title
+    val titleColor = GameColors.uiAccent.copy(alpha = 0.85f + 0.15f * sin(time * 2f))
+    val titleText = textMeasurer.measure(
+        AnnotatedString("APEX LEGEND"),
+        style = TextStyle(
+            fontFamily = CinzelFontFamily,
+            fontWeight = FontWeight.Black,
+            fontSize = 42.sp,
+            color = titleColor
+        )
+    )
+    drawText(titleText, topLeft = Offset(centerX - titleText.size.width / 2f, centerY))
+
+    // Subtitle
+    val subText = textMeasurer.measure(
+        AnnotatedString("You've mastered all five modes."),
+        style = TextStyle(
+            fontFamily = InterFontFamily,
+            fontSize = 18.sp,
+            color = GameColors.uiTextDim
+        )
+    )
+    drawText(subText, topLeft = Offset(
+        centerX - subText.size.width / 2f,
+        centerY + titleText.size.height + 12 * density
+    ))
+
+    // Player name
+    val nameY = centerY + titleText.size.height + subText.size.height + 36 * density
+    val nameText = textMeasurer.measure(
+        AnnotatedString(uiState.playerName),
+        style = TextStyle(
+            fontFamily = CinzelFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp,
+            color = GameColors.uiText
+        )
+    )
+    drawText(nameText, topLeft = Offset(centerX - nameText.size.width / 2f, nameY))
+
+    // Total score
+    val totalY = nameY + nameText.size.height + 8 * density
+    val totalScoreText = textMeasurer.measure(
+        AnnotatedString("Total Score: ${uiState.totalScore}"),
+        style = TextStyle(
+            fontFamily = CinzelFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 22.sp,
+            color = GameColors.uiAccent
+        )
+    )
+    drawText(totalScoreText, topLeft = Offset(centerX - totalScoreText.size.width / 2f, totalY))
+
+    // Buttons
+    val btnW = 200 * density
+    val btnH = 48 * density
+    val btnCorner = androidx.compose.ui.geometry.CornerRadius(12 * density)
+    val btn1Y = size.height * 0.62f
+    val btn2Y = btn1Y + btnH + 16 * density
+
+    // "Play Any Level" button
+    drawRoundRect(
+        color = GameColors.uiAccent,
+        topLeft = Offset(centerX - btnW / 2f, btn1Y),
+        size = Size(btnW, btnH),
+        cornerRadius = btnCorner
+    )
+    val btn1Text = textMeasurer.measure(
+        AnnotatedString("Play Any Level"),
+        style = TextStyle(
+            fontFamily = InterFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            color = GameColors.backgroundDark
+        )
+    )
+    drawText(btn1Text, topLeft = Offset(
+        centerX - btn1Text.size.width / 2f,
+        btn1Y + (btnH - btn1Text.size.height) / 2f
+    ))
+
+    // "Random Challenge" button
+    drawRoundRect(
+        color = GameColors.uiPanel,
+        topLeft = Offset(centerX - btnW / 2f, btn2Y),
+        size = Size(btnW, btnH),
+        cornerRadius = btnCorner
+    )
+    drawRoundRect(
+        color = GameColors.uiAccent.copy(alpha = 0.5f),
+        topLeft = Offset(centerX - btnW / 2f, btn2Y),
+        size = Size(btnW, btnH),
+        cornerRadius = btnCorner,
+        style = Stroke(width = 1.5f * density)
+    )
+    val btn2Text = textMeasurer.measure(
+        AnnotatedString("Random Challenge"),
+        style = TextStyle(
+            fontFamily = InterFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            color = GameColors.uiAccent
+        )
+    )
+    drawText(btn2Text, topLeft = Offset(
+        centerX - btn2Text.size.width / 2f,
+        btn2Y + (btnH - btn2Text.size.height) / 2f
+    ))
 }

@@ -2,6 +2,7 @@ package com.artmondo.boxters.ui.game
 
 import androidx.compose.ui.geometry.Offset
 import com.artmondo.boxters.data.model.*
+import com.artmondo.boxters.data.repository.LeaderboardEntry
 
 enum class TraceValidation { NONE, PREFIX, VALID, INVALID }
 
@@ -66,6 +67,15 @@ data class GameUiState(
     val percentLit: Int = 0,
     val cellsRemaining: Int = 0,
     val lastWordCellKeys: Set<String> = emptySet(),
+    // Apex
+    val lastApexEffect: String? = null,
+    val isInGauntlet: Boolean = false,
+    val isApexComplete: Boolean = false,
+    val apexJustUnlocked: Boolean = false,
+    // Per-level scoring
+    val isNewBest: Boolean = false,
+    val prevLevelBest: Int = 0,
+    val levelBest: Int = 0,
     // Overlays
     val solutionWords: List<SolutionWord> = emptyList(),
     val highlightedSolutionPath: List<HexCoord>? = null,
@@ -82,12 +92,19 @@ data class GameUiState(
     val canGoBack: Boolean = false,
     val canGoForward: Boolean = false,
     val hasMovesInProgress: Boolean = false,
-    // Menu
+    // Menu / Settings
     val playerName: String = "",
+    val playerId: String = "",
     val isRegistered: Boolean = false,
+    val gender: String = "",
+    val ageGroup: String = "",
     val playerStats: PlayerStats? = null,
     val unlockedModes: List<GameMode> = listOf(GameMode.SIMPLE),
     val selectedMode: GameMode = GameMode.SIMPLE,
     // Loading
-    val dictionaryLoaded: Boolean = false
+    val dictionaryLoaded: Boolean = false,
+    // Leaderboard
+    val leaderboard: List<LeaderboardEntry> = emptyList(),
+    val playerRank: Int = -1,
+    val leaderboardLoading: Boolean = false
 )

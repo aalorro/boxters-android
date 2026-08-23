@@ -1,5 +1,11 @@
 package com.artmondo.boxters.data.model
 
+data class ApexWeights(
+    val clear: Float,
+    val chain: Float,
+    val illuminate: Float
+)
+
 data class LevelData(
     val id: String,
     val name: String,
@@ -11,7 +17,8 @@ data class LevelData(
     val threeStarTarget: Int,
     val layout: LayoutDef,
     val objectives: List<ObjectiveDef>,
-    val tutorial: TutorialDef? = null
+    val tutorial: TutorialDef? = null,
+    val apexWeights: ApexWeights? = null
 )
 
 data class LayoutDef(

@@ -59,4 +59,6 @@ object GameColors {
     val chainCombo get() = if (isDark) Color(0xFF22C55E) else Color(0xFF059669)
     val illuminateAccent get() = if (isDark) Color(0xFFF59E0B) else Color(0xFFE85D04)
     val illuminateLit get() = if (isDark) Color(0x40FFD700) else Color(0x40FF6B35)
+    val apexAccent get() = if (isDark) Color(0xFFE879F9) else Color(0xFFA855F7)
+    val apexGlow get() = if (isDark) Color(0x99E879F9) else Color(0x80A855F7)
 }

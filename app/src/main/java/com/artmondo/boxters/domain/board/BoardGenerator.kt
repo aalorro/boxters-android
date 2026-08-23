@@ -1,6 +1,7 @@
 package com.artmondo.boxters.domain.board
 
 import com.artmondo.boxters.data.model.*
+import com.artmondo.boxters.data.repository.DictionaryRepository
 import com.artmondo.boxters.domain.dictionary.Dictionary
 import com.artmondo.boxters.domain.hex.HexMath
 import com.artmondo.boxters.util.Gameplay
@@ -38,6 +39,7 @@ object BoardGenerator {
             "clear" -> generateClearBoard(board, levelData, dictionary, rng)
             "chain" -> generateChainBoard(board, levelData, dictionary, rng)
             "illuminate" -> generateIlluminateBoard(board, levelData, dictionary, rng)
+            "apex" -> generateIlluminateBoard(board, levelData, dictionary, rng)
         }
 
         return board
@@ -80,6 +82,31 @@ object BoardGenerator {
         }
     }
 
+    /**
+     * Pick candidate words — prefer common everyday words, rarely use obscure ones.
+     */
+    private fun pickCandidateWords(
+        minLen: Int, maxLen: Int, count: Int, rng: SeededRNG, dictionary: Dictionary
+    ): List<String> {
+        val commonWords = DictionaryRepository.commonWordsList
+        val common = commonWords.filter { it.length in minLen..maxLen }
+        if (common.isEmpty()) {
+            // Fallback to full dictionary
+            return shuffleWith(dictionary.getWordList().filter { it.length in minLen..maxLen }, rng).take(count)
+        }
+        val shuffled = shuffleWith(common, rng).toMutableList()
+
+        // ~5% chance to swap one candidate for an uncommon word (for variety)
+        val commonSet = DictionaryRepository.commonWords
+        if (shuffled.size >= count && rng.nextFloat() < 0.05f) {
+            val all = dictionary.getWordList().filter { it.length in minLen..maxLen && it !in commonSet }
+            if (all.isNotEmpty()) {
+                shuffled[count - 1] = all[rng.nextInt(all.size)]
+            }
+        }
+        return shuffled.take(count)
+    }
+
     private fun generateSimpleBoard(
         board: Board,
         levelData: LevelData,
@@ -90,11 +117,8 @@ object BoardGenerator {
         val minLen = levelData.layout.minWordLen
         val maxLen = levelData.layout.maxWordLen
 
-        // Pick candidate words from dictionary
-        val candidates = dictionary.getWordList().filter {
-            it.length in minLen..maxLen
-        }
-        val shuffled = shuffleWith(candidates, rng)
+        // Pick candidate words — prefer common words
+        val shuffled = pickCandidateWords(minLen, maxLen, wordCount * 10, rng, dictionary)
 
         val anchors = board.field.getAllCells().filter { it.isAnchor }
         val hasAnchors = anchors.isNotEmpty()
@@ -127,8 +151,7 @@ object BoardGenerator {
         rng: SeededRNG
     ) {
         val allCells = board.field.getAllCells()
-        val candidates = dictionary.getWordList().filter { it.length in 3..8 }
-        val shuffled = shuffleWith(candidates, rng)
+        val shuffled = pickCandidateWords(3, 8, 200, rng, dictionary)
 
         val uncovered = allCells.map { it.key }.toMutableSet()
 
@@ -204,8 +227,7 @@ object BoardGenerator {
         dictionary: Dictionary,
         rng: SeededRNG
     ) {
-        val candidates = dictionary.getWordList().filter { it.length in 3..7 }
-        val shuffled = shuffleWith(candidates, rng)
+        val shuffled = pickCandidateWords(3, 7, 200, rng, dictionary)
 
         val allCellKeys = board.field.getAllCells().map { it.key }.toMutableSet()
         val covered = mutableSetOf<String>()

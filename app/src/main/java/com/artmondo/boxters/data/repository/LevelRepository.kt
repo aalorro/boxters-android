@@ -1,5 +1,6 @@
 package com.artmondo.boxters.data.repository
 
+import com.artmondo.boxters.data.model.ApexWeights
 import com.artmondo.boxters.data.model.LayoutDef
 import com.artmondo.boxters.data.model.LevelData
 import com.artmondo.boxters.data.model.ObjectiveDef
@@ -325,14 +326,14 @@ object LevelRepository {
             name = "Precision Strike",
             mode = "clear",
             tier = "clear",
-            maxMoves = 10,
+            maxMoves = 8,
             scoreMult = 0.8f,
             twoStarTarget = 210,
             threeStarTarget = 330,
             layout = LayoutDef(shape = "hex2"),
             objectives = listOf(
                 ObjectiveDef(type = "clearAllCells", description = "Clear all 19 cells", target = 1),
-                ObjectiveDef(type = "formWord", description = "Use a 4+ letter word", target = 1, params = mapOf("minLength" to 4), isPrimary = false)
+                ObjectiveDef(type = "formWord", description = "Use a 5+ letter word", target = 1, params = mapOf("minLength" to 5), isPrimary = false)
             ),
             tutorial = TutorialDef("Tip: If only 1 or 2 tiles remain in a cluster with no valid word, they get auto-cleared for you!")
         ),
@@ -342,7 +343,7 @@ object LevelRepository {
             name = "Demolition",
             mode = "clear",
             tier = "clear",
-            maxMoves = 16,
+            maxMoves = 12,
             scoreMult = 0.85f,
             twoStarTarget = 240,
             threeStarTarget = 370,
@@ -358,7 +359,7 @@ object LevelRepository {
             name = "Precision",
             mode = "clear",
             tier = "clear",
-            maxMoves = 14,
+            maxMoves = 10,
             scoreMult = 0.9f,
             twoStarTarget = 265,
             threeStarTarget = 400,
@@ -374,7 +375,7 @@ object LevelRepository {
             name = "Scorched Earth",
             mode = "clear",
             tier = "clear",
-            maxMoves = 12,
+            maxMoves = 10,
             scoreMult = 0.95f,
             twoStarTarget = 290,
             threeStarTarget = 440,
@@ -407,13 +408,13 @@ object LevelRepository {
             name = "Methodical",
             mode = "clear",
             tier = "clear",
-            maxMoves = 12,
+            maxMoves = 10,
             twoStarTarget = 340,
             threeStarTarget = 500,
             layout = LayoutDef(shape = "hex3"),
             objectives = listOf(
                 ObjectiveDef(type = "clearAllCells", description = "Clear all 37 cells", target = 1),
-                ObjectiveDef(type = "formWord", description = "Use a 5+ letter word", target = 1, params = mapOf("minLength" to 5), isPrimary = false)
+                ObjectiveDef(type = "formWord", description = "Form 3 words with 5+ letters", target = 3, params = mapOf("minLength" to 5))
             ),
             tutorial = TutorialDef("Work section by section. Clear one area completely before moving to the next to avoid scattered leftovers.")
         ),
@@ -423,13 +424,13 @@ object LevelRepository {
             name = "Obliterate",
             mode = "clear",
             tier = "clear",
-            maxMoves = 10,
+            maxMoves = 8,
             twoStarTarget = 360,
             threeStarTarget = 540,
             layout = LayoutDef(shape = "hex3"),
             objectives = listOf(
                 ObjectiveDef(type = "clearAllCells", description = "Clear all 37 cells", target = 1),
-                ObjectiveDef(type = "formWord", description = "Form 2 words of 5+ letters", target = 2, params = mapOf("minLength" to 5), isPrimary = false)
+                ObjectiveDef(type = "formWord", description = "Form 3 words of 5+ letters", target = 3, params = mapOf("minLength" to 5))
             ),
             tutorial = TutorialDef("Every move counts. Look for 5+ letter words before settling for shorter ones.")
         ),
@@ -439,13 +440,13 @@ object LevelRepository {
             name = "Surgical",
             mode = "clear",
             tier = "clear",
-            maxMoves = 9,
+            maxMoves = 8,
             twoStarTarget = 380,
             threeStarTarget = 570,
             layout = LayoutDef(shape = "hex3"),
             objectives = listOf(
                 ObjectiveDef(type = "clearAllCells", description = "Clear all 37 cells", target = 1),
-                ObjectiveDef(type = "formWord", description = "Form 3 words of 4+ letters", target = 3, params = mapOf("minLength" to 4), isPrimary = false)
+                ObjectiveDef(type = "formWord", description = "Form 2 words of 6+ letters", target = 2, params = mapOf("minLength" to 6))
             ),
             tutorial = TutorialDef("With just 9 moves, you need an average of 4+ tiles per word. Think big!")
         ),
@@ -461,7 +462,7 @@ object LevelRepository {
             layout = LayoutDef(shape = "hex3"),
             objectives = listOf(
                 ObjectiveDef(type = "clearAllCells", description = "Clear all 37 cells", target = 1),
-                ObjectiveDef(type = "formWord", description = "Form 3 words of 5+ letters", target = 3, params = mapOf("minLength" to 5), isPrimary = false)
+                ObjectiveDef(type = "formWord", description = "Form 3 words of 6+ letters", target = 3, params = mapOf("minLength" to 6))
             ),
             tutorial = TutorialDef("8 moves, 37 tiles. You need 5+ letter words almost every turn. Scan the whole board before each move!")
         ),
@@ -928,6 +929,255 @@ object LevelRepository {
                 ObjectiveDef(type = "formWord", description = "Form 5 words of 5+ letters", target = 5, params = mapOf("minLength" to 5))
             ),
             tutorial = TutorialDef("The ultimate illuminate challenge. Every move counts \u2014 plan your path carefully before you trace!")
+        ),
+
+        // ── APEX MODE (Levels 56-69) ──
+
+        LevelData(
+            id = "apex_01",
+            name = "First Contact",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 9,
+            scoreMult = 0.5f,
+            twoStarTarget = 200,
+            threeStarTarget = 320,
+            layout = LayoutDef(shape = "hex2", anchors = 1),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 2 words", target = 2, params = mapOf("minLength" to 3)),
+                ObjectiveDef(type = "illuminateAnchors", description = "Use the Anchor cell", target = 1)
+            ),
+            tutorial = TutorialDef("Apex mode: each word triggers a RANDOM effect \u2014 clear, chain, or illuminate. Words must pass through an anchor until the anchor objective is met, then you're free!")
+        ),
+
+        LevelData(
+            id = "apex_02",
+            name = "Shifting Ground",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 8,
+            scoreMult = 0.55f,
+            twoStarTarget = 240,
+            threeStarTarget = 380,
+            layout = LayoutDef(shape = "hex2"),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 2 words of 4+ letters", target = 2, params = mapOf("minLength" to 4)),
+                ObjectiveDef(type = "illuminatePercent", description = "Illuminate 50% of cells", target = 50)
+            ),
+            tutorial = TutorialDef("Tip: Watch the effect indicator after each word. Plan your next move based on what happened.")
+        ),
+
+        LevelData(
+            id = "apex_03",
+            name = "Wild Cards",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 8,
+            scoreMult = 0.6f,
+            twoStarTarget = 280,
+            threeStarTarget = 440,
+            layout = LayoutDef(shape = "hex2", anchors = 2),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 3 words", target = 3, params = mapOf("minLength" to 3)),
+                ObjectiveDef(type = "illuminateAnchors", description = "Use both Anchors", target = 2)
+            ),
+            tutorial = TutorialDef("Two anchors \u2014 every word must pass through one until the anchor objective is complete. After that, you're free to trace anywhere!")
+        ),
+
+        LevelData(
+            id = "apex_04",
+            name = "Fractured",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 11,
+            scoreMult = 0.65f,
+            twoStarTarget = 340,
+            threeStarTarget = 520,
+            layout = LayoutDef(shape = "hex3"),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 3 words of 4+ letters", target = 3, params = mapOf("minLength" to 4)),
+                ObjectiveDef(type = "illuminatePercent", description = "Illuminate 50% of cells", target = 50)
+            ),
+            tutorial = TutorialDef("Bigger board now. If tiles get cleared, you lose them. If they chain, new letters appear. Stay flexible.")
+        ),
+
+        LevelData(
+            id = "apex_05",
+            name = "Entropy",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 11,
+            scoreMult = 0.7f,
+            twoStarTarget = 380,
+            threeStarTarget = 580,
+            layout = LayoutDef(shape = "hex3", anchors = 2),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 3 words of 4+ letters", target = 3, params = mapOf("minLength" to 4)),
+                ObjectiveDef(type = "illuminateAnchors", description = "Use both Anchors", target = 2)
+            ),
+            tutorial = TutorialDef("Tip: Words must pass through an anchor until the objective is satisfied. Once all anchors are lit, remaining words can go anywhere!")
+        ),
+
+        LevelData(
+            id = "apex_06",
+            name = "Volatile",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 10,
+            scoreMult = 0.75f,
+            twoStarTarget = 420,
+            threeStarTarget = 640,
+            layout = LayoutDef(shape = "hex3"),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 3 words of 5+ letters", target = 3, params = mapOf("minLength" to 5)),
+                ObjectiveDef(type = "illuminatePercent", description = "Illuminate 60% of cells", target = 60)
+            ),
+            tutorial = TutorialDef("You need 60% illumination. Chain effects help by giving new letters, but clear effects remove tiles entirely.")
+        ),
+
+        LevelData(
+            id = "apex_07",
+            name = "Fusion Core",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 10,
+            scoreMult = 0.8f,
+            twoStarTarget = 460,
+            threeStarTarget = 700,
+            layout = LayoutDef(shape = "hex3", anchors = 3),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 4 words of 4+ letters", target = 4, params = mapOf("minLength" to 4)),
+                ObjectiveDef(type = "illuminateAnchors", description = "Use all 3 Anchors", target = 3)
+            ),
+            tutorial = TutorialDef("Three anchors to hit. Words must pass through one until all anchors are illuminated \u2014 then you're free to trace anywhere!")
+        ),
+
+        LevelData(
+            id = "apex_08",
+            name = "Singularity",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 10,
+            scoreMult = 0.85f,
+            twoStarTarget = 500,
+            threeStarTarget = 760,
+            layout = LayoutDef(shape = "hex3"),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 3 words of 5+ letters", target = 3, params = mapOf("minLength" to 5)),
+                ObjectiveDef(type = "achieveCombo", description = "Achieve a x2 combo", target = 2),
+                ObjectiveDef(type = "illuminatePercent", description = "Illuminate 60% of cells", target = 60)
+            ),
+            tutorial = TutorialDef("Combos trigger when chain effects overlap your previous word path. Chase them when you can!")
+        ),
+
+        LevelData(
+            id = "apex_09",
+            name = "Quantum Flux",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 9,
+            scoreMult = 0.9f,
+            twoStarTarget = 540,
+            threeStarTarget = 820,
+            layout = LayoutDef(shape = "hex3", anchors = 3),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 4 words of 5+ letters", target = 4, params = mapOf("minLength" to 5)),
+                ObjectiveDef(type = "illuminateAnchors", description = "Use all 3 Anchors", target = 3)
+            ),
+            tutorial = TutorialDef("Fewer moves, more anchors. Words must touch an anchor until the objective is met, then you're free. Plan two moves ahead.")
+        ),
+
+        LevelData(
+            id = "apex_10",
+            name = "Cataclysm",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 10,
+            scoreMult = 0.92f,
+            twoStarTarget = 580,
+            threeStarTarget = 880,
+            layout = LayoutDef(shape = "hex3"),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 3 words of 5+ letters", target = 3, params = mapOf("minLength" to 5)),
+                ObjectiveDef(type = "achieveCombo", description = "Achieve a x2 combo", target = 2),
+                ObjectiveDef(type = "illuminatePercent", description = "Illuminate 70% of cells", target = 70)
+            ),
+            tutorial = TutorialDef("Combos + illumination together. Chain effects on overlapping paths give combos AND might illuminate cells."),
+            apexWeights = ApexWeights(clear = 0.25f, chain = 0.45f, illuminate = 0.30f)
+        ),
+
+        LevelData(
+            id = "apex_11",
+            name = "Maelstrom",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 9,
+            scoreMult = 0.95f,
+            twoStarTarget = 620,
+            threeStarTarget = 940,
+            layout = LayoutDef(shape = "hex3", anchors = 3),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 4 words of 5+ letters", target = 4, params = mapOf("minLength" to 5)),
+                ObjectiveDef(type = "illuminateAnchors", description = "Use all 3 Anchors", target = 3),
+                ObjectiveDef(type = "achieveCombo", description = "Achieve a x2 combo", target = 2)
+            ),
+            tutorial = TutorialDef("Three anchors, combos required, and tight moves. Once all anchors are illuminated, remaining words are free. This is where Apex gets real."),
+            apexWeights = ApexWeights(clear = 0.20f, chain = 0.40f, illuminate = 0.40f)
+        ),
+
+        LevelData(
+            id = "apex_12",
+            name = "Pandemonium",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 8,
+            scoreMult = 0.97f,
+            twoStarTarget = 660,
+            threeStarTarget = 1000,
+            layout = LayoutDef(shape = "hex3"),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 4 words of 5+ letters", target = 4, params = mapOf("minLength" to 5)),
+                ObjectiveDef(type = "illuminatePercent", description = "Illuminate 75% of cells", target = 75)
+            ),
+            tutorial = TutorialDef("Only 7 moves to illuminate 75%. Every word must be long and precise.")
+        ),
+
+        LevelData(
+            id = "apex_13",
+            name = "Oblivion",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 10,
+            scoreMult = 0.98f,
+            twoStarTarget = 700,
+            threeStarTarget = 1060,
+            layout = LayoutDef(shape = "hex3", anchors = 4),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 5 words of 5+ letters", target = 5, params = mapOf("minLength" to 5)),
+                ObjectiveDef(type = "illuminateAnchors", description = "Use all 4 Anchors", target = 4),
+                ObjectiveDef(type = "achieveCombo", description = "Achieve a x3 combo", target = 3)
+            ),
+            tutorial = TutorialDef("Four anchors, x3 combo, 5+ letter words. Once all anchors are lit, you're free. The penultimate Apex challenge."),
+            apexWeights = ApexWeights(clear = 0.10f, chain = 0.65f, illuminate = 0.25f)
+        ),
+
+        LevelData(
+            id = "apex_14",
+            name = "Transcendence",
+            mode = "apex",
+            tier = "apex",
+            maxMoves = 9,
+            scoreMult = 1.0f,
+            twoStarTarget = 740,
+            threeStarTarget = 1120,
+            layout = LayoutDef(shape = "hex3"),
+            objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 4 words of 6+ letters", target = 4, params = mapOf("minLength" to 6)),
+                ObjectiveDef(type = "illuminatePercent", description = "Illuminate 75% of cells", target = 75),
+                ObjectiveDef(type = "achieveCombo", description = "Achieve a x3 combo", target = 3)
+            ),
+            tutorial = TutorialDef("The ultimate challenge. 75% illumination, 6+ letter words, x3 combos. You are the Apex."),
+            apexWeights = ApexWeights(clear = 0.05f, chain = 0.65f, illuminate = 0.30f)
         )
     )
 

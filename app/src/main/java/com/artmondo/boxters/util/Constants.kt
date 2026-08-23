@@ -24,7 +24,9 @@ object Gameplay {
     const val AUTO_CLEAR_MIN_CLUSTER = 3
     const val MAX_SOLUTION_WORDS = 8
     const val LEVELS_PER_MODE = 14
-    const val TOTAL_LEVELS = 56
+    const val TOTAL_LEVELS = 70
+    const val MAX_LEVEL_SCORE = 2500
+    const val APEX_UNLOCK_SCORE = 20000
     val VOWELS = setOf('A', 'E', 'I', 'O', 'U')
     val SAFE_LETTERS = ('A'..'Z').toSet() - setOf('J', 'Q', 'V', 'X', 'Z')
     val RARE_LETTERS = setOf('J', 'Q', 'X', 'Z')
@@ -46,8 +48,8 @@ object Combo {
 }
 
 object Scoring {
-    val BASE_TIER = mapOf("simple" to 50, "clear" to 60, "chain" to 70, "illuminate" to 80)
-    val MULTIPLIER_TIER = mapOf("simple" to 1.0f, "clear" to 1.2f, "chain" to 1.4f, "illuminate" to 1.6f)
+    val BASE_TIER = mapOf("simple" to 50, "clear" to 60, "chain" to 70, "illuminate" to 80, "apex" to 90)
+    val MULTIPLIER_TIER = mapOf("simple" to 1.0f, "clear" to 1.2f, "chain" to 1.4f, "illuminate" to 1.6f, "apex" to 1.8f)
     const val EFFICIENCY_PER_MOVE = 15
     const val SECONDARY_COMPLETION_BONUS = 30
 }
@@ -77,4 +79,4 @@ object LetterFrequency {
     )
 }
 
-val MODE_ORDER = listOf("simple", "clear", "chain", "illuminate")
+val MODE_ORDER = listOf("simple", "clear", "chain", "illuminate", "apex")
