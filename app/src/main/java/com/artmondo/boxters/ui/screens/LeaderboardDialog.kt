@@ -115,7 +115,7 @@ fun LeaderboardDialog(
                     Text(
                         text = "Score",
                         style = GameTypography.modeBadge.copy(fontSize = 11.sp, color = GameColors.uiTextDim),
-                        modifier = Modifier.width(60.dp),
+                        modifier = Modifier.width(72.dp),
                         textAlign = TextAlign.End
                     )
                     Text(
@@ -255,8 +255,9 @@ private fun LeaderboardRow(
                 fontWeight = FontWeight.Bold,
                 color = GameColors.uiText
             ),
-            modifier = Modifier.width(60.dp),
-            textAlign = TextAlign.End
+            modifier = Modifier.width(72.dp),
+            textAlign = TextAlign.End,
+            maxLines = 1
         )
 
         Text(

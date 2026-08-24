@@ -19,6 +19,9 @@ import com.artmondo.boxters.ui.game.GameViewModel
 fun GameScreen(
     modifier: Modifier = Modifier,
     deepLinkUri: String? = null,
+    updateAvailable: Boolean = false,
+    onUpdateClicked: () -> Unit = {},
+    onUpdateDismissed: () -> Unit = {},
     viewModel: GameViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -27,6 +30,7 @@ fun GameScreen(
     var showInfoDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showLeaderboard by remember { mutableStateOf(false) }
+    var updateDismissed by remember { mutableStateOf(false) }
 
     // Save board state when app goes to background
     DisposableEffect(lifecycleOwner) {
@@ -165,6 +169,16 @@ fun GameScreen(
                 playerId = uiState.playerId,
                 isLoading = uiState.leaderboardLoading,
                 onDismiss = { showLeaderboard = false }
+            )
+        }
+
+        if (updateAvailable && !updateDismissed && uiState.gameState == GameState.MENU) {
+            UpdateDialog(
+                onUpdate = onUpdateClicked,
+                onDismiss = {
+                    updateDismissed = true
+                    onUpdateDismissed()
+                }
             )
         }
     }
