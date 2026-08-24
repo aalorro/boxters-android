@@ -132,7 +132,7 @@ private fun AboutContent() {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         InfoText("Boxters is a word puzzle game where you trace paths across a hexagonal board to form words. Sharpen your vocabulary, test your spatial reasoning, and discover words you never knew existed.")
 
-        InfoText("Challenge yourself across four unique game modes \u2014 Simple, Clear, Chain, and Illuminate \u2014 each with its own twist on word-finding strategy. Complete each mode to unlock the next!")
+        InfoText("Challenge yourself across five unique game modes \u2014 Simple, Clear, Chain, Illuminate, and Apex \u2014 each with its own twist on word-finding strategy. Complete each mode to unlock the next!")
 
         Spacer(modifier = Modifier.height(4.dp))
         InfoHeader("Quick Tips")
@@ -191,15 +191,24 @@ private fun GamePlayContent() {
             "Light up the board. Each word permanently illuminates the tiles it passes through. Cover every tile to win.",
             "Prioritize unlit tiles at the edges \u2014 they're harder to reach later."
         )
+        ModeDescription(
+            "Apex",
+            "The ultimate challenge. Each word triggers a random effect \u2014 Clear, Chain, or Illuminate \u2014 keeping you on your toes. Unlocked after completing Illuminate and reaching 20,000 total score.",
+            "Adapt your strategy to each random effect. Once anchor objectives are met, words can be placed anywhere."
+        )
 
         Spacer(modifier = Modifier.height(4.dp))
         InfoHeader("Anchors")
-        InfoText("Some levels have Anchor cells (red rim). Every word you form must pass through an Anchor tile.")
+        InfoText("Some levels have Anchor cells (red rim). Every word you form must pass through an Anchor tile. In Apex mode, this constraint is lifted once the anchor objective is completed.")
 
         InfoHeader("Scoring")
         BulletPoint("Points are based on letter values and word length.")
         BulletPoint("Harder modes have higher score multipliers.")
         BulletPoint("Earn 1\u20133 stars per level based on your score.")
+        BulletPoint("Your best score per level is tracked \u2014 replay levels to beat your personal best and increase your total score.")
+
+        InfoHeader("Leaderboard")
+        InfoText("Tap the trophy icon on the main menu to view the global leaderboard. Your scores are synced automatically after each victory. Compete with players across platforms!")
 
         InfoHeader("Sharing & Loading")
         InfoText("Tap the share button (bottom-right of the board) to copy a link to your current board. Send it to a friend \u2014 they'll get the exact same board layout so you can compare scores!")
@@ -221,7 +230,7 @@ private fun GamePlayContent() {
 private fun PrivacyContent() {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         InfoHeader("Privacy Policy")
-        InfoText("Effective Date: August 6, 2026", color = GameColors.uiTextDim)
+        InfoText("Effective Date: August 11, 2026", color = GameColors.uiTextDim)
 
         InfoText("Boxters is committed to protecting your privacy. This policy explains what data is stored, how it is used, and your rights regarding that data.")
 
@@ -250,7 +259,7 @@ private fun PrivacyContent() {
         InfoText("You have full control over your data:")
         BulletPoint("Access: Your data is stored on your device and visible to you at any time.")
         BulletPoint("Deletion: Clear all saved data by going to Android Settings > Apps > Boxters > Storage > Clear Data.")
-        BulletPoint("Portability: No cloud data exists to export \u2014 all data is local.")
+        BulletPoint("Portability: Export your profile via Settings. Cloud data is limited to leaderboard entries.")
 
         InfoHeader("Children's Privacy")
         InfoText("Boxters does not collect any personal data from any users, including children.")
@@ -259,7 +268,7 @@ private fun PrivacyContent() {
         InfoText("Any updates to this privacy policy will be reflected here with a revised effective date.")
 
         InfoText(
-            "Last updated: August 9, 2026",
+            "Last updated: August 11, 2026",
             color = GameColors.uiTextDim
         )
     }
