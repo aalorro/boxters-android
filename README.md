@@ -25,7 +25,7 @@ Complete 14 levels in each mode to unlock the next. 3 lives per session with a 5
 - **Persistence:** SharedPreferences + kotlinx.serialization
 - **Audio:** SoundPool for SFX, synthesized PCM tones for letter sounds and victory fanfare
 - **Min SDK:** 24 (Android 7.0)
-- **Target SDK:** 35
+- **Target SDK:** 36
 
 ## Project Structure
 
@@ -49,7 +49,8 @@ app/src/main/
 │   │   └── scoring/ScoringEngine.kt   # Move scoring, level scoring, star ratings
 │   ├── ui/
 │   │   ├── theme/                     # Colors, Typography (Cinzel + Inter), Theme
-│   │   ├── screens/                   # LoadingScreen, RegisterScreen, WelcomeScreen, GameScreen
+│   │   ├── screens/                   # LoadingScreen, RegisterScreen, WelcomeScreen, GameScreen,
+│   │   │                                UpdateDialog, InfoDialog, SettingsDialog, LeaderboardDialog
 │   │   ├── game/                      # GameViewModel, GameUiState, GameEvent
 │   │   └── canvas/GameCanvas.kt       # Full canvas rendering: hex grid, trace lines, HUD,
 │   │                                    overlays, particles
@@ -70,8 +71,8 @@ app/src/main/
 
 ### Prerequisites
 
-- Android Studio (with bundled JDK 17+)
-- Android SDK (API 35)
+- Android Studio (with bundled JDK 21+)
+- Android SDK (API 36)
 
 ### Build
 
@@ -97,6 +98,8 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 - **Board sharing** — Deterministic PRNG (mulberry32) enables shareable board URLs via deep links
 - **Persistence** — Board state saved after each word; survives app kills and restores on relaunch
 - **Scoring system** — Letter values, combo multipliers, efficiency bonuses, 1-3 star ratings
+- **In-app updates** — Detects new versions on the Play Store and prompts users to update
+- **Leaderboard** — Firebase-backed global leaderboard with per-mode rankings
 
 ## Deep Links
 

@@ -2,6 +2,31 @@
 
 All notable changes to Boxters will be documented in this file.
 
+## [2.0.1] - 2026-08-24
+
+### Added
+- In-app update detection using Play In-App Updates API (flexible flow)
+- Update prompt dialog shown once per session on the menu screen
+
+### Fixed
+- Leaderboard scores of 20,000+ no longer wrap to a second line on mobile
+
+### Changed
+- Upgraded Android Gradle Plugin from 8.7.3 to 8.10.1
+- Upgraded Gradle wrapper from 8.9 to 8.11.1
+
+## [2.0.0] - 2026-08-17
+
+### Added
+- Apex mode: unlocked by completing all 4 modes, gauntlet run through all 56 levels
+- Firebase-powered global leaderboard with player rankings
+- Per-level scoring with best score tracking
+- Settings dialog with dark mode toggle, gender/age group, profile export/import
+- Leaderboard dialog with medal rankings and current player highlight
+
+### Changed
+- Updated game instructions and privacy policy for v2.0.0
+
 ## [1.1.1] - 2026-08-10
 
 ### Changed
