@@ -1139,7 +1139,8 @@ object LevelRepository {
                 ObjectiveDef(type = "formWord", description = "Form 4 words of 5+ letters", target = 4, params = mapOf("minLength" to 5)),
                 ObjectiveDef(type = "illuminatePercent", description = "Illuminate 75% of cells", target = 75)
             ),
-            tutorial = TutorialDef("Only 7 moves to illuminate 75%. Every word must be long and precise.")
+            tutorial = TutorialDef("Only 7 moves to illuminate 75%. Every word must be long and precise."),
+            apexWeights = ApexWeights(clear = 0.15f, chain = 0.55f, illuminate = 0.30f)
         ),
 
         LevelData(
