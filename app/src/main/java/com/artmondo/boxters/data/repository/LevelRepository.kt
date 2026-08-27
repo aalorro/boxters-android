@@ -1013,9 +1013,11 @@ object LevelRepository {
             layout = LayoutDef(shape = "hex3", anchors = 2),
             objectives = listOf(
                 ObjectiveDef(type = "formWord", description = "Form 3 words of 4+ letters", target = 3, params = mapOf("minLength" to 4)),
-                ObjectiveDef(type = "illuminateAnchors", description = "Use both Anchors", target = 2)
+                ObjectiveDef(type = "illuminateAnchors", description = "Use both Anchors", target = 2),
+                ObjectiveDef(type = "illuminatePercent", description = "Illuminate 50% of cells", target = 50)
             ),
-            tutorial = TutorialDef("Tip: Words must pass through an anchor until the objective is satisfied. Once all anchors are lit, remaining words can go anywhere!")
+            tutorial = TutorialDef("Tip: Words must pass through an anchor until the objective is satisfied. Once all anchors are lit, remaining words can go anywhere!"),
+            apexWeights = ApexWeights(clear = 0.20f, chain = 0.30f, illuminate = 0.50f)
         ),
 
         LevelData(
@@ -1047,9 +1049,11 @@ object LevelRepository {
             layout = LayoutDef(shape = "hex3", anchors = 3),
             objectives = listOf(
                 ObjectiveDef(type = "formWord", description = "Form 4 words of 4+ letters", target = 4, params = mapOf("minLength" to 4)),
-                ObjectiveDef(type = "illuminateAnchors", description = "Use all 3 Anchors", target = 3)
+                ObjectiveDef(type = "illuminateAnchors", description = "Use all 3 Anchors", target = 3),
+                ObjectiveDef(type = "illuminatePercent", description = "Illuminate 60% of cells", target = 60)
             ),
-            tutorial = TutorialDef("Three anchors to hit. Words must pass through one until all anchors are illuminated \u2014 then you're free to trace anywhere!")
+            tutorial = TutorialDef("Three anchors to hit. Words must pass through one until all anchors are illuminated \u2014 then you're free to trace anywhere!"),
+            apexWeights = ApexWeights(clear = 0.15f, chain = 0.25f, illuminate = 0.60f)
         ),
 
         LevelData(

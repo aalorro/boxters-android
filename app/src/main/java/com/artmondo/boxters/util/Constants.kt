@@ -8,7 +8,7 @@ object Timing {
     const val VICTORY_TRANSITION_DELAY_MS = 1200
     const val DEFEAT_TRANSITION_DELAY_MS = 2000
     const val COOLDOWN_DURATION_MS = 300_000L
-    const val FEEDBACK_DISPLAY_MS = 2000
+    const val FEEDBACK_DISPLAY_MS = 5000
     const val LOADING_MIN_DISPLAY_MS = 4000
     const val CONFETTI_INTERVAL_MS = 2000
 }

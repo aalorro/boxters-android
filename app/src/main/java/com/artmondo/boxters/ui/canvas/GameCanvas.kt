@@ -599,8 +599,8 @@ private fun DrawScope.drawHexCell(
 
     // Chain mode last-word pulse (also in Apex when chain effect active)
     if (isLastWordCell && (mode == GameMode.CHAIN || mode == GameMode.APEX)) {
-        val pulseAlpha = 0.15f + 0.1f * sin(time * 4f)
-        drawPath(path, Color(0xFF60A5FA).copy(alpha = pulseAlpha))
+        val pulseAlpha = 0.35f + 0.15f * sin(time * 4f)
+        drawPath(path, Color(0xFF3B82F6).copy(alpha = pulseAlpha))
     }
 
     // Fill

@@ -1,6 +1,6 @@
 claud# Boxters
 
-A hex-grid word puzzle game for Android. Trace adjacent hexagonal cells to spell words, complete objectives, and progress through 56 levels across 4 game modes.
+A hex-grid word puzzle game for Android. Trace adjacent hexagonal cells to spell words, complete objectives, and progress through 70 levels across 5 game modes.
 
 ## Game Overview
 

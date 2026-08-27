@@ -2,6 +2,20 @@
 
 All notable changes to Boxters will be documented in this file.
 
+## [2.0.2] - 2026-08-26
+
+### Added
+- Dictionary: che, etc, milf, omni, perp
+- Apex level 5 (Entropy): illuminate-weighted apex weights (20/30/50 clear/chain/illuminate)
+- Apex level 7 (Fusion Core): illuminate-weighted apex weights (15/25/60 clear/chain/illuminate)
+
+### Fixed
+- Total score showing zero on welcome screen until player starts playing
+
+### Changed
+- Feedback message display duration increased from 2s to 5s
+- Chain mode highlighted tiles now use a stronger, more saturated blue with higher opacity
+
 ## [2.0.1] - 2026-08-24
 
 ### Added

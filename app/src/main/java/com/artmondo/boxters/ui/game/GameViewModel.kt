@@ -111,6 +111,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 isRegistered = p != null,
                 playerName = p?.name ?: "",
                 playerId = p?.playerId ?: "",
+                totalScore = p?.totalScore ?: 0,
                 playerStats = p?.let {
                     PlayerStats(it.gamesPlayed, it.levelsCompleted, it.bestScore)
                 },
