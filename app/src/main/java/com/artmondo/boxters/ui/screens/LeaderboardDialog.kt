@@ -25,6 +25,7 @@ fun LeaderboardDialog(
     entries: List<LeaderboardEntry>,
     playerRank: Int,
     playerId: String,
+    playerEntry: LeaderboardEntry? = null,
     isLoading: Boolean,
     onDismiss: () -> Unit
 ) {
@@ -158,8 +159,15 @@ fun LeaderboardDialog(
                     }
                 }
 
-                // Player rank footer
-                if (playerRank > LEADERBOARD_SIZE || playerRank == -1) {
+                // Player row at bottom if outside top 30
+                if (playerRank > LEADERBOARD_SIZE && playerEntry != null) {
+                    HorizontalDivider(color = GameColors.uiPanelBorder, thickness = 1.dp)
+                    LeaderboardRow(
+                        rank = playerRank,
+                        entry = playerEntry,
+                        isCurrentPlayer = true
+                    )
+                } else if (playerRank == -1) {
                     HorizontalDivider(color = GameColors.uiPanelBorder, thickness = 1.dp)
                     Row(
                         modifier = Modifier
@@ -168,7 +176,7 @@ fun LeaderboardDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (playerRank > 0) "Your rank: #$playerRank" else "Not ranked yet",
+                            text = "Not ranked yet",
                             style = GameTypography.body.copy(
                                 fontSize = 13.sp,
                                 color = GameColors.uiTextDim

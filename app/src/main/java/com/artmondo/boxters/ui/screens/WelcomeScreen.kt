@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.CornerRadius
@@ -30,6 +31,7 @@ fun WelcomeScreen(
     onToggleSound: () -> Unit,
     onToggleTheme: () -> Unit,
     onInfoClicked: () -> Unit,
+    onRandom: () -> Unit = {},
     onSettingsClicked: () -> Unit = {},
     onLeaderboardClicked: () -> Unit = {}
 ) {
@@ -142,15 +144,16 @@ fun WelcomeScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
+            val welcomeFontSize = if (LocalConfiguration.current.screenWidthDp >= 600) 24.sp else 16.sp
             Text(
                 text = "Welcome back, ",
-                style = GameTypography.body.copy(fontSize = 16.sp),
+                style = GameTypography.body.copy(fontSize = welcomeFontSize),
                 textAlign = TextAlign.Center
             )
             Text(
                 text = uiState.playerName,
                 style = GameTypography.body.copy(
-                    fontSize = 16.sp,
+                    fontSize = welcomeFontSize,
                     color = GameColors.uiAccent,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                 ),
@@ -227,6 +230,29 @@ fun WelcomeScreen(
                     text = "Play",
                     style = GameTypography.button.copy(fontSize = 22.sp)
                 )
+            }
+
+            // Random button — only visible after completing Apex mode
+            if (uiState.hasCompletedApex) {
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onRandom,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = GameColors.uiAccent
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.5.dp, GameColors.uiAccent
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth(0.7f)
+                        .height(48.dp)
+                ) {
+                    Text(
+                        text = "Random",
+                        style = GameTypography.button.copy(fontSize = 18.sp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))

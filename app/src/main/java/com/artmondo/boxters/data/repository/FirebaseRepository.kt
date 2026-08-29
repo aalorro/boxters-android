@@ -114,7 +114,6 @@ class FirebaseRepository(context: Context) {
         return try {
             val snapshot = db.collection(LEADERBOARD_COLLECTION)
                 .orderBy("totalScore", com.google.firebase.firestore.Query.Direction.DESCENDING)
-                .limit(LEADERBOARD_SIZE.toLong())
                 .get()
                 .await()
 

@@ -91,6 +91,7 @@ fun GameScreen(
                         uiState = uiState,
                         onModeSelected = viewModel::onModeSelected,
                         onPlay = viewModel::onPlayClicked,
+                        onRandom = viewModel::onRandomClicked,
                         onToggleSound = viewModel::onToggleSound,
                         onToggleTheme = viewModel::onToggleTheme,
                         onInfoClicked = { showInfoDialog = true },
@@ -140,6 +141,7 @@ fun GameScreen(
                 gender = uiState.gender,
                 ageGroup = uiState.ageGroup,
                 onToggleTheme = viewModel::onToggleTheme,
+                onNameChanged = viewModel::onNameChanged,
                 onGenderChanged = viewModel::onGenderChanged,
                 onAgeGroupChanged = viewModel::onAgeGroupChanged,
                 onExportProfile = {
@@ -167,6 +169,7 @@ fun GameScreen(
                 entries = uiState.leaderboard,
                 playerRank = uiState.playerRank,
                 playerId = uiState.playerId,
+                playerEntry = uiState.playerLeaderboardEntry,
                 isLoading = uiState.leaderboardLoading,
                 onDismiss = { showLeaderboard = false }
             )

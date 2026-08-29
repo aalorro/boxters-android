@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PlayerProfile(
-    val name: String,
+    var name: String,
     var playerId: String = "",
     var gamesPlayed: Int = 0,
     var levelsCompleted: Int = 0,

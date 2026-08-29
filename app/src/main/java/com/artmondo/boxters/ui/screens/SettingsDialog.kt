@@ -26,6 +26,7 @@ fun SettingsDialog(
     onToggleTheme: () -> Unit,
     onGenderChanged: (String) -> Unit,
     onAgeGroupChanged: (String) -> Unit,
+    onNameChanged: (String) -> Unit,
     onExportProfile: () -> Unit,
     onImportProfile: () -> Unit,
     onDismiss: () -> Unit
@@ -80,32 +81,49 @@ fun SettingsDialog(
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // --- Player Name (read-only) ---
+                // --- Player Name ---
                 SettingsSection("Player Name") {
+                    var editedName by remember { mutableStateOf(playerName) }
+                    val nameChanged = editedName.trim() != playerName
                     OutlinedTextField(
-                        value = playerName,
-                        onValueChange = {},
-                        readOnly = true,
-                        enabled = false,
+                        value = editedName,
+                        onValueChange = { if (it.length <= 20) editedName = it },
                         singleLine = true,
                         textStyle = GameTypography.body.copy(fontSize = 14.sp),
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            disabledTextColor = GameColors.uiText,
-                            disabledBorderColor = GameColors.uiPanelBorder,
-                            disabledContainerColor = GameColors.backgroundMid,
-                            disabledLabelColor = GameColors.uiTextDim
+                            unfocusedTextColor = GameColors.uiText,
+                            focusedTextColor = GameColors.uiText,
+                            unfocusedBorderColor = GameColors.uiPanelBorder,
+                            focusedBorderColor = GameColors.uiAccent,
+                            unfocusedContainerColor = GameColors.backgroundMid,
+                            focusedContainerColor = GameColors.backgroundMid,
+                            cursorColor = GameColors.uiAccent
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Text(
-                        text = "Name changes require account verification.",
-                        style = GameTypography.body.copy(
-                            fontSize = 11.sp,
-                            color = GameColors.uiTextDim
-                        ),
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
+                    if (nameChanged && editedName.trim().isNotEmpty()) {
+                        Button(
+                            onClick = {
+                                onNameChanged(editedName)
+                                editedName = editedName.trim()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = GameColors.uiAccent,
+                                contentColor = GameColors.backgroundDark
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(36.dp)
+                                .padding(top = 4.dp)
+                        ) {
+                            Text(
+                                text = "Save",
+                                style = GameTypography.modeBadge.copy(fontSize = 13.sp)
+                            )
+                        }
+                    }
                 }
 
                 // --- Theme Toggle ---

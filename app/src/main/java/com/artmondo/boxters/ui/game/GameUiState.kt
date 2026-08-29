@@ -72,6 +72,8 @@ data class GameUiState(
     val isInGauntlet: Boolean = false,
     val isApexComplete: Boolean = false,
     val apexJustUnlocked: Boolean = false,
+    val hasCompletedApex: Boolean = false,
+    val isInRandomMode: Boolean = false,
     // Per-level scoring
     val isNewBest: Boolean = false,
     val prevLevelBest: Int = 0,
@@ -106,5 +108,6 @@ data class GameUiState(
     // Leaderboard
     val leaderboard: List<LeaderboardEntry> = emptyList(),
     val playerRank: Int = -1,
+    val playerLeaderboardEntry: LeaderboardEntry? = null,
     val leaderboardLoading: Boolean = false
 )

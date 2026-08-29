@@ -1086,9 +1086,11 @@ object LevelRepository {
             layout = LayoutDef(shape = "hex3", anchors = 3),
             objectives = listOf(
                 ObjectiveDef(type = "formWord", description = "Form 4 words of 5+ letters", target = 4, params = mapOf("minLength" to 5)),
-                ObjectiveDef(type = "illuminateAnchors", description = "Use all 3 Anchors", target = 3)
+                ObjectiveDef(type = "illuminateAnchors", description = "Use all 3 Anchors", target = 3),
+                ObjectiveDef(type = "illuminatePercent", description = "Illuminate 60% of cells", target = 60)
             ),
-            tutorial = TutorialDef("Fewer moves, more anchors. Words must touch an anchor until the objective is met, then you're free. Plan two moves ahead.")
+            tutorial = TutorialDef("Fewer moves, more anchors. Words must touch an anchor until the objective is met, then you're free. Plan two moves ahead."),
+            apexWeights = ApexWeights(clear = 0.15f, chain = 0.25f, illuminate = 0.60f)
         ),
 
         LevelData(

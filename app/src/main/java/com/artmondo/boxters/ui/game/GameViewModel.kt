@@ -56,6 +56,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private var isNewBest = false
     private var prevLevelBest = 0
     private var isInGauntlet = false
+    private var isInRandomMode = false
     private var apexJustUnlocked = false
 
     init {
@@ -120,7 +121,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 selectedMode = p?.let { GameMode.fromId(it.lastMode) } ?: GameMode.SIMPLE,
                 audioEnabled = audioManager.enabled,
                 gender = p?.gender ?: "",
-                ageGroup = p?.ageGroup ?: ""
+                ageGroup = p?.ageGroup ?: "",
+                hasCompletedApex = p?.celebratedModes?.contains("apex") == true ||
+                    (p?.highestLevels?.get("apex") ?: 0) >= Gameplay.LEVELS_PER_MODE - 1
             )
 
             // Check cooldown
@@ -194,6 +197,24 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         startLevel(currentLevelIndex)
+    }
+
+    fun onRandomClicked() {
+        val p = profile ?: return
+
+        // Check cooldown
+        if (p.cooldownUntil > System.currentTimeMillis()) {
+            gameState = GameState.COOLDOWN
+            _uiState.value = _uiState.value.copy(
+                gameState = GameState.COOLDOWN,
+                cooldownUntil = p.cooldownUntil,
+                lives = p.lives
+            )
+            return
+        }
+
+        isInRandomMode = true
+        loadRandomChallenge()
     }
 
     private fun startLevel(levelIndex: Int, forceNew: Boolean = false) {
@@ -657,6 +678,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
+        // Random mode — load next random challenge
+        if (isInRandomMode) {
+            loadRandomChallenge()
+            return
+        }
+
         val nextLevel = currentLevelIndex + 1
         if (nextLevel >= Gameplay.LEVELS_PER_MODE) {
             // Mode completed — advance to next mode if available
@@ -736,6 +763,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 gameState = GameState.COOLDOWN,
                 cooldownUntil = p.cooldownUntil
             )
+        } else if (isInRandomMode) {
+            // Random mode — load a new random challenge instead of retrying
+            loadRandomChallenge()
         } else {
             // Retry the same level
             startLevel(currentLevelIndex, forceNew = true)
@@ -754,6 +784,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         // If in gauntlet, load gauntlet level instead of restarting
         if (isInGauntlet) {
             loadGauntletLevel()
+        } else if (isInRandomMode) {
+            loadRandomChallenge()
         } else {
             startLevel(currentLevelIndex, forceNew = true)
         }
@@ -774,24 +806,41 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(leaderboardLoading = true)
             try {
-                val entries = firebaseRepo.fetchLeaderboard()
+                val allEntries = firebaseRepo.fetchLeaderboard()
                 val playerId = profile?.playerId ?: ""
-                val rank = firebaseRepo.findPlayerRank(entries, playerId)
+                val rank = firebaseRepo.findPlayerRank(allEntries, playerId)
+                val playerEntry = if (rank > 30) allEntries.getOrNull(rank - 1) else null
                 _uiState.value = _uiState.value.copy(
-                    leaderboard = entries,
+                    leaderboard = allEntries.take(30),
                     playerRank = rank,
+                    playerLeaderboardEntry = playerEntry,
                     leaderboardLoading = false
                 )
             } catch (_: Exception) {
                 val cached = firebaseRepo.getCachedLeaderboard()
                 val playerId = profile?.playerId ?: ""
                 val rank = firebaseRepo.findPlayerRank(cached, playerId)
+                val playerEntry = if (rank > 30) cached.getOrNull(rank - 1) else null
                 _uiState.value = _uiState.value.copy(
-                    leaderboard = cached,
+                    leaderboard = cached.take(30),
                     playerRank = rank,
+                    playerLeaderboardEntry = playerEntry,
                     leaderboardLoading = false
                 )
             }
+        }
+    }
+
+    fun onNameChanged(name: String) {
+        val trimmed = name.trim().take(20)
+        if (trimmed.isEmpty()) return
+        val p = profile ?: return
+        p.name = trimmed
+        playerRepository.saveProfile(p)
+        _uiState.value = _uiState.value.copy(playerName = trimmed)
+        // Sync updated name with Firebase
+        viewModelScope.launch {
+            try { firebaseRepo.submitScore(p) } catch (_: Exception) {}
         }
     }
 
@@ -1006,6 +1055,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         board = null
         tracer = null
         objectiveTracker = null
+        isInRandomMode = false
 
         _uiState.value = _uiState.value.copy(
             gameState = GameState.MENU,
@@ -1013,6 +1063,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             playerStats = PlayerStats(p.gamesPlayed, p.levelsCompleted, p.bestScore),
             unlockedModes = p.unlockedModes.map { GameMode.fromId(it) },
             selectedMode = GameMode.fromId(p.lastMode),
+            hasCompletedApex = "apex" in p.celebratedModes ||
+                (p.highestLevels["apex"] ?: 0) >= Gameplay.LEVELS_PER_MODE - 1,
+            isInRandomMode = false,
             cells = emptyList(),
             tracePath = emptyList(),
             wordsFormed = emptyList(),
@@ -1078,6 +1131,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             lastApexEffect = b.lastApexEffect,
             levelBest = levelBest,
             isInGauntlet = isInGauntlet,
+            isInRandomMode = isInRandomMode,
             hasMovesInProgress = b.moveHistory.isNotEmpty(),
             canGoBack = currentLevelIndex > 0 && b.moveHistory.isEmpty(),
             canGoForward = run {
