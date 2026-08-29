@@ -153,7 +153,7 @@ private fun AboutContent() {
             color = GameColors.uiTextDim
         )
         InfoText(
-            "Version 2.0.2",
+            "Version 2.0.3",
             color = GameColors.uiTextDim
         )
     }

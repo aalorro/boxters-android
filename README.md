@@ -1,6 +1,6 @@
 # Boxters
 
-A hex-grid word puzzle game for Android. Trace adjacent hexagonal cells to spell words, complete objectives, and progress through 70 levels across 5 game modes.
+A hex-grid word puzzle game for Android. Trace adjacent hexagonal cells to spell words, complete objectives, and progress through 70 levels across 5 game modes. Players who reach the final Apex level unlock Random mode for endless replayability.
 
 ## Game Overview
 
@@ -99,7 +99,9 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 - **Persistence** — Board state saved after each word; survives app kills and restores on relaunch
 - **Scoring system** — Letter values, combo multipliers, efficiency bonuses, 1-3 star ratings
 - **In-app updates** — Detects new versions on the Play Store and prompts users to update
-- **Leaderboard** — Firebase-backed global leaderboard with per-mode rankings
+- **Leaderboard** — Firebase-backed global leaderboard with per-mode rankings; shows player's actual rank when outside top 30
+- **Random mode** — Endless random games from level 6+ across all modes, unlocked after reaching the final Apex level
+- **Editable player name** — Change your display name from Settings at any time
 
 ## Deep Links
 

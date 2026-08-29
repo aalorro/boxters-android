@@ -2,6 +2,18 @@
 
 All notable changes to Boxters will be documented in this file.
 
+## [2.0.3] - 2026-08-28
+
+### Added
+- Random mode: endless random games (level 6+ from any mode) unlocked after reaching the final Apex level
+- Editable player name in Settings with Save button and Firebase sync
+- Leaderboard now shows player's actual rank as a full row at the bottom when outside top 30
+
+### Changed
+- Leaderboard fetches all entries to compute real player rank (previously limited to top 30)
+- Welcome text ("Welcome back, ...") is 50% larger on tablets
+- Apex level 9 (Quantum Flux): added illuminate 60% objective and apex weights (15/25/60)
+
 ## [2.0.2] - 2026-08-26
 
 ### Added
