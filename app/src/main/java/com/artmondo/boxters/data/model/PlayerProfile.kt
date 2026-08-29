@@ -19,6 +19,7 @@ data class PlayerProfile(
     var lastMode: String = "simple",
     var cooldownUntil: Long = 0,
     var lives: Int = 3,
+    var livesLostAtLevel: Int = -1,
     var gender: String = "",
     var ageGroup: String = "",
     var isInGauntlet: Boolean = false

@@ -142,6 +142,8 @@ private fun AboutContent() {
         BulletPoint("Common prefixes and suffixes (-ing, -tion, re-, un-) can help you spot longer words.")
         BulletPoint("Edge tiles are harder to connect later \u2014 use them early when you can.")
         BulletPoint("Don't waste moves on guesses. Invalid words (not in the dictionary) still cost a move!")
+        BulletPoint("You can retrace your path back to undo letters without losing a move \u2014 just drag back over the tiles you've already traced.")
+        BulletPoint("Watch the trace color as you spell: it changes from red to green in real time, letting you know if your word is valid before you lift your finger.")
         BulletPoint("Tap the share button to copy your board link. Send it to a friend to challenge them on the same board!")
         BulletPoint("To load a shared board, copy the link, then tap the load button (left of the share button).")
 

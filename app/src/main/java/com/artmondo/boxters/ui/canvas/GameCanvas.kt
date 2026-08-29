@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
@@ -64,6 +65,8 @@ fun GameCanvas(
     var hexSize by remember { mutableFloatStateOf(61f) }
     var time by remember { mutableFloatStateOf(0f) }
     var showTutorialPopup by remember { mutableStateOf(false) }
+    var tutorialDragOffset by remember { mutableStateOf(Offset.Zero) }
+    var tutorialPopupRect by remember { mutableStateOf<Rect?>(null) }
     var cooldownInfoBtnY by remember { mutableFloatStateOf(0f) }
 
     // Animation loop
@@ -111,9 +114,27 @@ fun GameCanvas(
                             val down = awaitFirstDown()
                             down.consume()
 
-                            // If tutorial popup is showing, dismiss on any tap
+                            // If tutorial popup is showing, drag it or dismiss
                             if (showTutorialPopup) {
-                                showTutorialPopup = false
+                                val popupBounds = tutorialPopupRect
+                                val touchPos = down.position
+                                if (popupBounds != null && popupBounds.contains(touchPos)) {
+                                    // Drag the popup
+                                    var lastPos = touchPos
+                                    do {
+                                        val event = awaitPointerEvent()
+                                        val change = event.changes.firstOrNull() ?: break
+                                        if (change.pressed) {
+                                            tutorialDragOffset += change.position - lastPos
+                                            lastPos = change.position
+                                            change.consume()
+                                        }
+                                    } while (event.changes.any { it.pressed })
+                                } else {
+                                    showTutorialPopup = false
+                                    tutorialDragOffset = Offset.Zero
+                                    tutorialPopupRect = null
+                                }
                                 return@awaitEachGesture
                             }
 
@@ -137,6 +158,7 @@ fun GameCanvas(
                             if ((pos - midBtnPos).getDistance() < buttonRadius) {
                                 if (screenWidthDp < 600f && uiState.tutorialMessage != null && uiState.wordsFormed.isEmpty()) {
                                     showTutorialPopup = true
+                                    tutorialDragOffset = Offset.Zero
                                 } else if (screenWidthDp >= 600f) {
                                     onToggleSound()
                                 }
@@ -338,7 +360,9 @@ fun GameCanvas(
             }
 
             // Draw HUD text elements
-            drawHud(uiState, textMeasurer, density.density, time, showTutorialPopup)
+            drawHud(uiState, textMeasurer, density.density, time, showTutorialPopup, tutorialDragOffset) { rect ->
+                tutorialPopupRect = rect
+            }
 
             // Draw overlays
             when (uiState.gameState) {
@@ -731,7 +755,9 @@ private fun DrawScope.drawHud(
     textMeasurer: TextMeasurer,
     density: Float,
     time: Float,
-    showTutorialPopup: Boolean = false
+    showTutorialPopup: Boolean = false,
+    tutorialPopupOffset: Offset = Offset.Zero,
+    onPopupRectMeasured: (Rect?) -> Unit = {}
 ) {
     val screenWidthDp = size.width / density
     val isPhone = screenWidthDp < 600f
@@ -958,38 +984,8 @@ private fun DrawScope.drawHud(
     uiState.tutorialMessage?.let { msg ->
         if (uiState.wordsFormed.isEmpty()) {
             if (isPhone) {
-                // Phone: tutorial popup drawn below the "?" button (which replaces sound toggle)
-                if (showTutorialPopup) {
-                    val popupAnchorY = topPadding + 8 * density + btnRadius + 8 * density
-                    val tutText = textMeasurer.measure(
-                        AnnotatedString(msg),
-                        style = TextStyle(
-                            fontFamily = InterFontFamily,
-                            fontSize = 13.sp,
-                            color = GameColors.uiText.copy(alpha = 0.9f)
-                        ),
-                        constraints = androidx.compose.ui.unit.Constraints(
-                            maxWidth = (size.width * 0.75f).toInt()
-                        )
-                    )
-                    // Right-align popup so it doesn't overflow the screen edge
-                    val popupPadding = 12 * density
-                    val popupX = (size.width - popupPadding - tutText.size.width - 16 * density).coerceAtLeast(popupPadding)
-                    drawRoundRect(
-                        color = GameColors.uiPanel,
-                        topLeft = Offset(popupX - 8 * density, popupAnchorY - 6 * density),
-                        size = Size(tutText.size.width + 16 * density, tutText.size.height + 12 * density),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8 * density)
-                    )
-                    drawRoundRect(
-                        color = GameColors.uiAccent.copy(alpha = 0.3f),
-                        topLeft = Offset(popupX - 8 * density, popupAnchorY - 6 * density),
-                        size = Size(tutText.size.width + 16 * density, tutText.size.height + 12 * density),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8 * density),
-                        style = Stroke(width = 1f * density)
-                    )
-                    drawText(tutText, topLeft = Offset(popupX, popupAnchorY))
-                }
+                // Phone: tutorial popup is drawn after buttons (see end of drawHud)
+                if (!showTutorialPopup) onPopupRectMeasured(null)
             } else {
                 // Tablet: show tutorial inline as before
                 val tutY = modeHudY + 30 * density
@@ -1154,6 +1150,48 @@ private fun DrawScope.drawHud(
     val arrowHeadSize = 5f * density * navScale
     drawLine(GameColors.uiAccent, Offset(shareX, arrowTop), Offset(shareX - arrowHeadSize, arrowTop + arrowHeadSize), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
     drawLine(GameColors.uiAccent, Offset(shareX, arrowTop), Offset(shareX + arrowHeadSize, arrowTop + arrowHeadSize), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
+
+    // Phone tutorial popup — drawn last so it renders on top of all buttons
+    if (isPhone && showTutorialPopup && uiState.tutorialMessage != null && uiState.wordsFormed.isEmpty()) {
+        val msg = uiState.tutorialMessage
+        val popupAnchorY = topPadding + 8 * density + btnRadius + 8 * density
+        val tutText = textMeasurer.measure(
+            AnnotatedString(msg),
+            style = TextStyle(
+                fontFamily = InterFontFamily,
+                fontSize = 13.sp,
+                color = GameColors.uiText.copy(alpha = 0.9f)
+            ),
+            constraints = androidx.compose.ui.unit.Constraints(
+                maxWidth = (size.width * 0.75f).toInt()
+            )
+        )
+        val popupPadding = 12 * density
+        val basePopupX = (size.width - popupPadding - tutText.size.width - 16 * density).coerceAtLeast(popupPadding)
+        val popupW = tutText.size.width + 16 * density
+        val popupH = tutText.size.height + 12 * density
+        // Apply drag offset
+        val popupLeft = basePopupX - 8 * density + tutorialPopupOffset.x
+        val popupTop = popupAnchorY - 6 * density + tutorialPopupOffset.y
+        // Clamp to screen bounds
+        val clampedLeft = popupLeft.coerceIn(0f, size.width - popupW)
+        val clampedTop = popupTop.coerceIn(0f, size.height - popupH)
+        drawRoundRect(
+            color = GameColors.uiPanel,
+            topLeft = Offset(clampedLeft, clampedTop),
+            size = Size(popupW, popupH),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(8 * density)
+        )
+        drawRoundRect(
+            color = GameColors.uiAccent.copy(alpha = 0.3f),
+            topLeft = Offset(clampedLeft, clampedTop),
+            size = Size(popupW, popupH),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(8 * density),
+            style = Stroke(width = 1f * density)
+        )
+        drawText(tutText, topLeft = Offset(clampedLeft + 8 * density, clampedTop + 6 * density))
+        onPopupRectMeasured(Rect(clampedLeft, clampedTop, clampedLeft + popupW, clampedTop + popupH))
+    }
 }
 
 private fun DrawScope.drawVictoryOverlay(

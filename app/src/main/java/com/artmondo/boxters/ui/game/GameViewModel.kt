@@ -465,8 +465,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         p.levelsCompleted++
         p.gamesPlayed++
 
-        // Reset lives on victory
-        p.lives = Gameplay.MAX_LIVES
+        // Restore lives only if playing at the same level or higher than where lives were lost
+        if (p.lives < Gameplay.MAX_LIVES) {
+            val currentAbsolute = absoluteLevel(currentMode.id, currentLevelIndex)
+            if (p.livesLostAtLevel < 0 || currentAbsolute >= p.livesLostAtLevel) {
+                p.lives = Gameplay.MAX_LIVES
+                p.livesLostAtLevel = -1
+            }
+        }
 
         // Advance level
         val nextLevel = currentLevelIndex + 1
@@ -635,6 +641,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         p.gamesPlayed++
         p.lives = maxOf(p.lives, 0)
 
+        // Track the level where the first life was lost (for life-restore gating)
+        if (p.livesLostAtLevel < 0) {
+            p.livesLostAtLevel = absoluteLevel(currentMode.id, currentLevelIndex)
+        }
+
         if (p.lives <= 0) {
             // Game over
             gameState = GameState.GAME_OVER
@@ -776,8 +787,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val p = profile ?: return
         if (System.currentTimeMillis() < p.cooldownUntil) return
 
-        // Restore lives
+        // Restore lives (cooldown penalty served)
         p.lives = Gameplay.MAX_LIVES
+        p.livesLostAtLevel = -1
         p.cooldownUntil = 0
         playerRepository.saveProfile(p)
 
@@ -1236,6 +1248,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         if (gameState == GameState.PLAYING && board != null) {
             saveBoardState()
         }
+    }
+
+    /** Compute an absolute level index across all modes for difficulty comparison. */
+    private fun absoluteLevel(modeId: String, levelIndex: Int): Int {
+        val modeIndex = MODE_ORDER.indexOf(modeId).coerceAtLeast(0)
+        return modeIndex * Gameplay.LEVELS_PER_MODE + levelIndex
     }
 
     override fun onCleared() {
