@@ -75,6 +75,7 @@ data class GameUiState(
     val hasCompletedApex: Boolean = false,
     val isInRandomMode: Boolean = false,
     // Per-level scoring
+    val livesRestored: Boolean = false,
     val isNewBest: Boolean = false,
     val prevLevelBest: Int = 0,
     val levelBest: Int = 0,

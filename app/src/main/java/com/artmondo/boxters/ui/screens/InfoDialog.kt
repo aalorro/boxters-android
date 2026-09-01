@@ -155,7 +155,7 @@ private fun AboutContent() {
             color = GameColors.uiTextDim
         )
         InfoText(
-            "Version 2.0.3",
+            "Version 2.0.4",
             color = GameColors.uiTextDim
         )
     }
@@ -224,7 +224,7 @@ private fun GamePlayContent() {
         BulletPoint("Not included: Proper nouns, hyphenated words, words longer than 8 letters, or obscure abbreviations.")
 
         InfoHeader("Lives")
-        InfoText("You start with 3 lives. Failing a level costs a life. Lose all 3 lives and you'll need to wait 5 minutes before retrying with fresh lives.")
+        InfoText("You start with 3 lives. Failing a level costs a life. Winning a level at or beyond where you first lost a life restores all your lives. Lose all 3 lives and you'll need to wait 5 minutes before retrying with fresh lives.")
     }
 }
 

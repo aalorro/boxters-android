@@ -14,8 +14,8 @@ android {
         applicationId = "com.artmondo.boxters"
         minSdk = 24
         targetSdk = 36
-        versionCode = 7
-        versionName = "2.0.3"
+        versionCode = 8
+        versionName = "2.0.4"
     }
 
     buildTypes {
@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
+    implementation(libs.androidx.fragment)
     implementation(libs.play.app.update)
     implementation(libs.play.app.update.ktx)
     testImplementation(libs.junit)

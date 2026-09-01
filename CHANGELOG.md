@@ -2,6 +2,20 @@
 
 All notable changes to Boxters will be documented in this file.
 
+## [2.0.4] - 2026-09-01
+
+### Added
+- "Lives restored!" notification on victory overlay when lives are regained
+- Drag grip indicator on tutorial popup for discoverability
+
+### Fixed
+- In-app update button doing nothing (migrated to ActivityResultLauncher API, added install listener)
+- Tutorial popup initial position no longer obscured by buttons on phones
+
+### Changed
+- Tutorial popup now appears centered below button row instead of overlapping it
+- Lives explanation in info dialog updated to describe the restoration mechanic
+
 ## [2.0.3] - 2026-08-28
 
 ### Added

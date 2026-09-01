@@ -466,11 +466,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         p.gamesPlayed++
 
         // Restore lives only if playing at the same level or higher than where lives were lost
+        var livesRestored = false
         if (p.lives < Gameplay.MAX_LIVES) {
             val currentAbsolute = absoluteLevel(currentMode.id, currentLevelIndex)
             if (p.livesLostAtLevel < 0 || currentAbsolute >= p.livesLostAtLevel) {
                 p.lives = Gameplay.MAX_LIVES
                 p.livesLostAtLevel = -1
+                livesRestored = true
             }
         }
 
@@ -580,6 +582,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 isFirstModeCompletion -> ultimateTitle
                 else -> victoryWord
             },
+            livesRestored = livesRestored,
             victorySubtitle = when {
                 apexJustUnlocked -> "You've earned the right to play Apex mode!"
                 isApexComplete -> "You've mastered all five modes."

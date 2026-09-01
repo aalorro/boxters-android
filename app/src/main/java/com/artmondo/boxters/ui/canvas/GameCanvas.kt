@@ -1154,7 +1154,8 @@ private fun DrawScope.drawHud(
     // Phone tutorial popup — drawn last so it renders on top of all buttons
     if (isPhone && showTutorialPopup && uiState.tutorialMessage != null && uiState.wordsFormed.isEmpty()) {
         val msg = uiState.tutorialMessage
-        val popupAnchorY = topPadding + 8 * density + btnRadius + 8 * density
+        // Position below the button row (buttons + gap)
+        val popupAnchorY = topPadding + 8 * density + btnRadius * 2 + 16 * density
         val tutText = textMeasurer.measure(
             AnnotatedString(msg),
             style = TextStyle(
@@ -1167,12 +1168,14 @@ private fun DrawScope.drawHud(
             )
         )
         val popupPadding = 12 * density
-        val basePopupX = (size.width - popupPadding - tutText.size.width - 16 * density).coerceAtLeast(popupPadding)
+        val gripHeight = 14 * density
         val popupW = tutText.size.width + 16 * density
-        val popupH = tutText.size.height + 12 * density
+        val popupH = gripHeight + tutText.size.height + 12 * density
+        // Center horizontally by default
+        val basePopupX = (size.width - popupW) / 2f
         // Apply drag offset
-        val popupLeft = basePopupX - 8 * density + tutorialPopupOffset.x
-        val popupTop = popupAnchorY - 6 * density + tutorialPopupOffset.y
+        val popupLeft = basePopupX + tutorialPopupOffset.x
+        val popupTop = popupAnchorY + tutorialPopupOffset.y
         // Clamp to screen bounds
         val clampedLeft = popupLeft.coerceIn(0f, size.width - popupW)
         val clampedTop = popupTop.coerceIn(0f, size.height - popupH)
@@ -1189,7 +1192,22 @@ private fun DrawScope.drawHud(
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(8 * density),
             style = Stroke(width = 1f * density)
         )
-        drawText(tutText, topLeft = Offset(clampedLeft + 8 * density, clampedTop + 6 * density))
+        // Drag grip — three short horizontal bars
+        val gripCenterX = clampedLeft + popupW / 2f
+        val gripTopY = clampedTop + 5 * density
+        val gripBarW = 20 * density
+        val gripBarColor = GameColors.uiTextDim.copy(alpha = 0.4f)
+        for (i in 0..2) {
+            val barY = gripTopY + i * 4 * density
+            drawLine(
+                gripBarColor,
+                start = Offset(gripCenterX - gripBarW / 2f, barY),
+                end = Offset(gripCenterX + gripBarW / 2f, barY),
+                strokeWidth = 1.5f * density,
+                cap = StrokeCap.Round
+            )
+        }
+        drawText(tutText, topLeft = Offset(clampedLeft + 8 * density, clampedTop + gripHeight))
         onPopupRectMeasured(Rect(clampedLeft, clampedTop, clampedLeft + popupW, clampedTop + popupH))
     }
 }
@@ -1272,9 +1290,28 @@ private fun DrawScope.drawVictoryOverlay(
         drawText(beatFeedback, topLeft = Offset(centerX - beatFeedback.size.width / 2f, bestFeedbackY))
     }
 
+    // Lives restored notification
+    var afterBestY = bestFeedbackY
+    if (uiState.livesRestored) {
+        val livesY = bestFeedbackY + 24 * density
+        val heartPulse = 0.9f + 0.1f * sin(time * 4f)
+        val livesMsg = "\u2764 Lives restored!"
+        val livesText = textMeasurer.measure(
+            AnnotatedString(livesMsg),
+            style = TextStyle(
+                fontFamily = InterFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 17.sp,
+                color = Color(0xFF4CAF50).copy(alpha = heartPulse)
+            )
+        )
+        drawText(livesText, topLeft = Offset(centerX - livesText.size.width / 2f, livesY))
+        afterBestY = livesY + livesText.size.height
+    }
+
     // Subtitle
     if (uiState.victorySubtitle.isNotEmpty()) {
-        val subY = bestFeedbackY + 24 * density
+        val subY = afterBestY + 24 * density
         val subText = textMeasurer.measure(
             AnnotatedString(uiState.victorySubtitle),
             style = TextStyle(fontSize = 18.sp, color = GameColors.uiTextDim)
