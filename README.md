@@ -101,7 +101,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 - **In-app updates** — Detects new versions on the Play Store and prompts users to update
 - **Leaderboard** — Firebase-backed global leaderboard with per-mode rankings; shows player's actual rank when outside top 30
 - **Random mode** — Endless random games from level 6+ across all modes, unlocked after reaching the final Apex level
-- **Editable player name** — Change your display name from Settings at any time
+- **Editable player name** — Change your display name from Settings at any time (minimum 4 characters)
 
 ## Deep Links
 

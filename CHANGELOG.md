@@ -2,6 +2,17 @@
 
 All notable changes to Boxters will be documented in this file.
 
+## [2.0.5] - 2026-10-12
+
+### Added
+- Minimum 4-character requirement for player names (registration and settings)
+- Simple level 4: added "Form 2 words" objective alongside anchor requirement
+- Simple level 7: added "Form 2 words of 4+ letters" objective
+- Simple levels 11 & 13: increased anchors from 2 to 3
+
+### Changed
+- Objectives panel uses compact fonts and tighter spacing on phones when 3+ objectives are displayed
+
 ## [2.0.4] - 2026-09-01
 
 ### Added

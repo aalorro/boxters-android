@@ -14,8 +14,8 @@ android {
         applicationId = "com.artmondo.boxters"
         minSdk = 24
         targetSdk = 36
-        versionCode = 8
-        versionName = "2.0.4"
+        versionCode = 9
+        versionName = "2.0.5"
     }
 
     buildTypes {
