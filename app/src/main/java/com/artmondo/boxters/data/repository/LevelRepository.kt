@@ -71,7 +71,8 @@ object LevelRepository {
             threeStarTarget = 170,
             layout = LayoutDef(shape = "hex2", anchors = 1),
             objectives = listOf(
-                ObjectiveDef(type = "illuminateAnchors", description = "Must use the Anchor cell (each word)", target = 1)
+                ObjectiveDef(type = "formWord", description = "Form 2 words", target = 2, params = mapOf("minLength" to 3)),
+                ObjectiveDef(type = "illuminateAnchors", description = "Must use the Anchor cells", target = 1)
             ),
             tutorial = TutorialDef("Anchor cells (red rim) must be used in your words!")
         ),
@@ -119,6 +120,7 @@ object LevelRepository {
             threeStarTarget = 220,
             layout = LayoutDef(shape = "hex3", anchors = 2),
             objectives = listOf(
+                ObjectiveDef(type = "formWord", description = "Form 2 words of 4+ letters", target = 2, params = mapOf("minLength" to 4)),
                 ObjectiveDef(type = "illuminateAnchors", description = "Must use both Anchors (use each in a word)", target = 2)
             ),
             tutorial = TutorialDef("With two anchors, every word must pass through at least one. Plan paths that connect them.")
@@ -181,10 +183,10 @@ object LevelRepository {
             maxMoves = 6,
             twoStarTarget = 200,
             threeStarTarget = 300,
-            layout = LayoutDef(shape = "hex3", anchors = 2),
+            layout = LayoutDef(shape = "hex3", anchors = 3),
             objectives = listOf(
                 ObjectiveDef(type = "formWord", description = "Form 3 words of 5+ letters", target = 3, params = mapOf("minLength" to 5)),
-                ObjectiveDef(type = "illuminateAnchors", description = "Must use both Anchors (use each in a word)", target = 2)
+                ObjectiveDef(type = "illuminateAnchors", description = "Must use all 3 Anchors (use each in a word)", target = 3)
             ),
             tutorial = TutorialDef("Fewer moves means every word counts. Aim for 5+ letters on each move.")
         ),
@@ -214,10 +216,10 @@ object LevelRepository {
             maxMoves = 6,
             twoStarTarget = 220,
             threeStarTarget = 340,
-            layout = LayoutDef(shape = "hex3", anchors = 2),
+            layout = LayoutDef(shape = "hex3", anchors = 3),
             objectives = listOf(
                 ObjectiveDef(type = "formWord", description = "Form 4 words of 4+ letters", target = 4, params = mapOf("minLength" to 4)),
-                ObjectiveDef(type = "illuminateAnchors", description = "Must use both Anchors (use each in a word)", target = 2)
+                ObjectiveDef(type = "illuminateAnchors", description = "Must use all 3 Anchors (use each in a word)", target = 3)
             ),
             tutorial = TutorialDef("Four words in six moves \u2014 no room for errors. Plan all your paths before you start.")
         ),

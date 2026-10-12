@@ -417,27 +417,28 @@ fun GameCanvas(
                 }
             }
 
-            // Objectives panel
-            val objFontSize = if (isPhone) 13.sp else 18.sp
-            val objIconSize = if (isPhone) 13.sp else 18.sp
-            val objProgressSize = if (isPhone) 12.sp else 16.sp
+            // Objectives panel — shrink fonts when 3+ objectives on phone
+            val manyObjectives = isPhone && uiState.objectives.size >= 3
+            val objFontSize = if (manyObjectives) 11.sp else if (isPhone) 13.sp else 18.sp
+            val objIconSize = if (manyObjectives) 11.sp else if (isPhone) 13.sp else 18.sp
+            val objProgressSize = if (manyObjectives) 10.sp else if (isPhone) 12.sp else 16.sp
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 40.dp, start = 16.dp, end = 16.dp)
                     .background(GameColors.uiPanel, RoundedCornerShape(8.dp))
-                    .padding(if (isPhone) 8.dp else 12.dp)
+                    .padding(if (manyObjectives) 6.dp else if (isPhone) 8.dp else 12.dp)
             ) {
                 for (obj in uiState.objectives) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = if (isPhone) 1.dp else 2.dp)
+                        modifier = Modifier.padding(vertical = if (manyObjectives) 0.dp else if (isPhone) 1.dp else 2.dp)
                     ) {
                         Text(
                             text = if (obj.completed) "✓" else "○",
                             color = if (obj.completed) GameColors.uiSuccess else GameColors.uiTextDim,
                             fontSize = objIconSize,
-                            modifier = Modifier.width(if (isPhone) 18.dp else 24.dp)
+                            modifier = Modifier.width(if (manyObjectives) 15.dp else if (isPhone) 18.dp else 24.dp)
                         )
                         Text(
                             text = obj.description,

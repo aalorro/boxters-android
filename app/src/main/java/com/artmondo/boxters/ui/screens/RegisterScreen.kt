@@ -63,7 +63,7 @@ fun RegisterScreen(onRegister: (String) -> Unit) {
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
-                    onDone = { if (name.isNotBlank()) onRegister(name) }
+                    onDone = { if (name.trim().length >= 4) onRegister(name) }
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = GameColors.uiText,
@@ -74,11 +74,20 @@ fun RegisterScreen(onRegister: (String) -> Unit) {
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
+            if (name.isNotBlank() && name.trim().length < 4) {
+                Text(
+                    text = "Name must be at least 4 characters",
+                    style = GameTypography.body.copy(
+                        fontSize = 12.sp,
+                        color = GameColors.uiTextDim
+                    )
+                )
+            }
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { if (name.isNotBlank()) onRegister(name) },
-                enabled = name.isNotBlank(),
+                onClick = { if (name.trim().length >= 4) onRegister(name) },
+                enabled = name.trim().length >= 4,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = GameColors.uiAccent,
                     contentColor = GameColors.backgroundDark

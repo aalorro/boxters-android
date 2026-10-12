@@ -102,7 +102,16 @@ fun SettingsDialog(
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    if (nameChanged && editedName.trim().isNotEmpty()) {
+                    if (nameChanged && editedName.trim().length in 1..3) {
+                        Text(
+                            text = "Name must be at least 4 characters",
+                            style = GameTypography.body.copy(
+                                fontSize = 12.sp,
+                                color = GameColors.uiTextDim
+                            )
+                        )
+                    }
+                    if (nameChanged && editedName.trim().length >= 4) {
                         Button(
                             onClick = {
                                 onNameChanged(editedName)
