@@ -1063,7 +1063,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private fun returnToMenu() {
         val p = profile ?: return
         // Save board state so player can resume where they left off
-        if (gameState == GameState.PLAYING && board != null && board!!.moveHistory.isNotEmpty()) {
+        if (gameState == GameState.PLAYING && board != null) {
             saveBoardState()
         }
         gameState = GameState.MENU
@@ -1193,7 +1193,6 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private fun tryRestoreBoard(): Boolean {
         val snapshot = playerRepository.loadBoardSnapshot(currentMode.id) ?: return false
         if (snapshot.levelIndex != currentLevelIndex) return false
-        if (snapshot.moveHistory.isEmpty()) return false
 
         val absoluteIndex = LevelRepository.getFirstLevelForMode(currentMode.id) + currentLevelIndex
         val levelData = LevelRepository.getLevel(absoluteIndex) ?: return false

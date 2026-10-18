@@ -59,7 +59,7 @@ app/src/main/
 │   ├── sharing/BoardSharing.kt        # URL encode/decode for board sharing + deep links
 │   └── util/Constants.kt              # Timing, Gameplay, Scoring, LetterValues constants
 ├── assets/
-│   ├── dictionary.txt                 # 80,363 words
+│   ├── dictionary.txt                 # 80,400 words
 │   └── sfx/                           # 7 MP3 sound effects
 └── res/
     ├── font/                          # Cinzel + Inter TTF fonts
@@ -96,7 +96,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 - **Audio synthesis** — 26 letter tones on a pentatonic scale, word chords, error sounds, victory fanfare — all generated as PCM buffers at startup
 - **Particle effects** — Victory bursts, clear/chain/illuminate effects, confetti, twinkling background stars
 - **Board sharing** — Deterministic PRNG (mulberry32) enables shareable board URLs via deep links
-- **Persistence** — Board state saved after each word; survives app kills and restores on relaunch
+- **Persistence** — Board state saved on every exit (including mid-game back navigation); resumes the exact same board on return
 - **Scoring system** — Letter values, combo multipliers, efficiency bonuses, 1-3 star ratings
 - **In-app updates** — Detects new versions on the Play Store and prompts users to update
 - **Leaderboard** — Firebase-backed global leaderboard with per-mode rankings; shows player's actual rank when outside top 30

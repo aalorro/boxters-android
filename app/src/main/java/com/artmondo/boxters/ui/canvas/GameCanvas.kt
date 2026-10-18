@@ -176,6 +176,29 @@ fun GameCanvas(
                             val navY = canvasSize.height - 200.dp.toPx()
                             val navHitRadius = 39.dp.toPx()
 
+                            if (!uiState.hasMovesInProgress) {
+                                // Load button
+                                val loadPos = Offset(canvasSize.width - 110.dp.toPx(), navY)
+                                if ((pos - loadPos).getDistance() < navHitRadius) {
+                                    onLoad()
+                                    return@awaitEachGesture
+                                }
+
+                                // Back arrow
+                                val backPos = Offset(40.dp.toPx(), navY)
+                                if ((pos - backPos).getDistance() < navHitRadius) {
+                                    onNavigateLevel(-1)
+                                    return@awaitEachGesture
+                                }
+
+                                // Forward arrow
+                                val fwdPos = Offset(110.dp.toPx(), navY)
+                                if ((pos - fwdPos).getDistance() < navHitRadius) {
+                                    onNavigateLevel(1)
+                                    return@awaitEachGesture
+                                }
+                            }
+
                             // Share button
                             val sharePos = Offset(canvasSize.width - 40.dp.toPx(), navY)
                             if ((pos - sharePos).getDistance() < navHitRadius) {
@@ -1066,7 +1089,7 @@ private fun DrawScope.drawHud(
     val navArrowFontSize = if (isPhone) 21.sp else 31.sp
     val navStrokeWidth = 2.5f * density * navScale
 
-    val isActiveGame = uiState.gameState == GameState.PLAYING || uiState.gameState == GameState.SUBMITTING
+    val isActiveGame = (uiState.gameState == GameState.PLAYING || uiState.gameState == GameState.SUBMITTING) && uiState.hasMovesInProgress
 
     if (!isActiveGame) {
         // Back arrow

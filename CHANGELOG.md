@@ -7,8 +7,11 @@ All notable changes to Boxters will be documented in this file.
 ### Added
 - 3 new dictionary words: yada, rethaw, vax
 
+### Fixed
+- Exiting an in-progress game now always saves the board; returning to play resumes the exact same board (previously only saved if at least one word had been formed)
+
 ### Changed
-- Back, forward, and load-board buttons are now hidden during active gameplay; only the share button remains visible, freeing up screen space on smaller phones
+- Back, forward, and load-board buttons are hidden once the player makes their first move; they remain visible before any moves are made so players can still navigate levels or load a shared board before starting
 
 ## [2.0.5] - 2026-10-12
 
