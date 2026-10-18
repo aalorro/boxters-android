@@ -176,31 +176,10 @@ fun GameCanvas(
                             val navY = canvasSize.height - 200.dp.toPx()
                             val navHitRadius = 39.dp.toPx()
 
-                            // Load button
-                            val loadPos = Offset(canvasSize.width - 110.dp.toPx(), navY)
-                            if ((pos - loadPos).getDistance() < navHitRadius) {
-                                onLoad()
-                                return@awaitEachGesture
-                            }
-
                             // Share button
                             val sharePos = Offset(canvasSize.width - 40.dp.toPx(), navY)
                             if ((pos - sharePos).getDistance() < navHitRadius) {
                                 onShare()
-                                return@awaitEachGesture
-                            }
-
-                            // Back arrow
-                            val backPos = Offset(40.dp.toPx(), navY)
-                            if ((pos - backPos).getDistance() < navHitRadius) {
-                                onNavigateLevel(-1)
-                                return@awaitEachGesture
-                            }
-
-                            // Forward arrow
-                            val fwdPos = Offset(110.dp.toPx(), navY)
-                            if ((pos - fwdPos).getDistance() < navHitRadius) {
-                                onNavigateLevel(1)
                                 return@awaitEachGesture
                             }
 
@@ -1087,48 +1066,52 @@ private fun DrawScope.drawHud(
     val navArrowFontSize = if (isPhone) 21.sp else 31.sp
     val navStrokeWidth = 2.5f * density * navScale
 
-    // Back arrow
-    val backX = 40f * density
-    val backAlpha = if (uiState.canGoBack) 1f else 0.3f
-    drawCircle(GameColors.uiPanel.copy(alpha = backAlpha), radius = navBtnRadius, center = Offset(backX, navBottomY))
-    val backText = textMeasurer.measure(
-        AnnotatedString("◀"),
-        style = TextStyle(fontSize = navArrowFontSize, color = GameColors.uiText.copy(alpha = backAlpha))
-    )
-    drawText(backText, topLeft = Offset(backX - backText.size.width / 2f, navBottomY - backText.size.height / 2f))
+    val isActiveGame = uiState.gameState == GameState.PLAYING || uiState.gameState == GameState.SUBMITTING
 
-    // Forward arrow
-    val fwdX = 110f * density
-    val fwdAlpha = if (uiState.canGoForward) 1f else 0.3f
-    drawCircle(GameColors.uiPanel.copy(alpha = fwdAlpha), radius = navBtnRadius, center = Offset(fwdX, navBottomY))
-    val fwdText = textMeasurer.measure(
-        AnnotatedString("▶"),
-        style = TextStyle(fontSize = navArrowFontSize, color = GameColors.uiText.copy(alpha = fwdAlpha))
-    )
-    drawText(fwdText, topLeft = Offset(fwdX - fwdText.size.width / 2f, navBottomY - fwdText.size.height / 2f))
+    if (!isActiveGame) {
+        // Back arrow
+        val backX = 40f * density
+        val backAlpha = if (uiState.canGoBack) 1f else 0.3f
+        drawCircle(GameColors.uiPanel.copy(alpha = backAlpha), radius = navBtnRadius, center = Offset(backX, navBottomY))
+        val backText = textMeasurer.measure(
+            AnnotatedString("◀"),
+            style = TextStyle(fontSize = navArrowFontSize, color = GameColors.uiText.copy(alpha = backAlpha))
+        )
+        drawText(backText, topLeft = Offset(backX - backText.size.width / 2f, navBottomY - backText.size.height / 2f))
 
-    // Load button
-    val loadX = size.width - 110f * density
-    drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(loadX, navBottomY))
-    drawCircle(GameColors.uiAccent.copy(alpha = 0.5f), radius = navBtnRadius, center = Offset(loadX, navBottomY),
-        style = Stroke(width = 1.5f * density * navScale))
-    val loadPaint = Stroke(width = navStrokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
-    val loadIconSize = 9f * density * navScale
-    // Tray (open-top box)
-    val loadTrayPath = Path().apply {
-        moveTo(loadX - loadIconSize, navBottomY - 2f * density * navScale)
-        lineTo(loadX - loadIconSize, navBottomY + loadIconSize)
-        lineTo(loadX + loadIconSize, navBottomY + loadIconSize)
-        lineTo(loadX + loadIconSize, navBottomY - 2f * density * navScale)
+        // Forward arrow
+        val fwdX = 110f * density
+        val fwdAlpha = if (uiState.canGoForward) 1f else 0.3f
+        drawCircle(GameColors.uiPanel.copy(alpha = fwdAlpha), radius = navBtnRadius, center = Offset(fwdX, navBottomY))
+        val fwdText = textMeasurer.measure(
+            AnnotatedString("▶"),
+            style = TextStyle(fontSize = navArrowFontSize, color = GameColors.uiText.copy(alpha = fwdAlpha))
+        )
+        drawText(fwdText, topLeft = Offset(fwdX - fwdText.size.width / 2f, navBottomY - fwdText.size.height / 2f))
+
+        // Load button
+        val loadX = size.width - 110f * density
+        drawCircle(GameColors.uiPanel, radius = navBtnRadius, center = Offset(loadX, navBottomY))
+        drawCircle(GameColors.uiAccent.copy(alpha = 0.5f), radius = navBtnRadius, center = Offset(loadX, navBottomY),
+            style = Stroke(width = 1.5f * density * navScale))
+        val loadPaint = Stroke(width = navStrokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val loadIconSize = 9f * density * navScale
+        // Tray (open-top box)
+        val loadTrayPath = Path().apply {
+            moveTo(loadX - loadIconSize, navBottomY - 2f * density * navScale)
+            lineTo(loadX - loadIconSize, navBottomY + loadIconSize)
+            lineTo(loadX + loadIconSize, navBottomY + loadIconSize)
+            lineTo(loadX + loadIconSize, navBottomY - 2f * density * navScale)
+        }
+        drawPath(loadTrayPath, GameColors.uiAccent, style = loadPaint)
+        // Downward arrow
+        val loadArrowBottom = navBottomY + 2f * density * navScale
+        val loadArrowTop = navBottomY - loadIconSize
+        drawLine(GameColors.uiAccent, Offset(loadX, loadArrowTop), Offset(loadX, loadArrowBottom), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
+        val loadArrowHead = 5f * density * navScale
+        drawLine(GameColors.uiAccent, Offset(loadX, loadArrowBottom), Offset(loadX - loadArrowHead, loadArrowBottom - loadArrowHead), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
+        drawLine(GameColors.uiAccent, Offset(loadX, loadArrowBottom), Offset(loadX + loadArrowHead, loadArrowBottom - loadArrowHead), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
     }
-    drawPath(loadTrayPath, GameColors.uiAccent, style = loadPaint)
-    // Downward arrow
-    val loadArrowBottom = navBottomY + 2f * density * navScale
-    val loadArrowTop = navBottomY - loadIconSize
-    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowTop), Offset(loadX, loadArrowBottom), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
-    val loadArrowHead = 5f * density * navScale
-    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowBottom), Offset(loadX - loadArrowHead, loadArrowBottom - loadArrowHead), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
-    drawLine(GameColors.uiAccent, Offset(loadX, loadArrowBottom), Offset(loadX + loadArrowHead, loadArrowBottom - loadArrowHead), strokeWidth = navStrokeWidth, cap = StrokeCap.Round)
 
     // Share button
     val shareX = size.width - 40f * density

@@ -2,6 +2,14 @@
 
 All notable changes to Boxters will be documented in this file.
 
+## [2.1.0] - 2026-10-18
+
+### Added
+- 3 new dictionary words: yada, rethaw, vax
+
+### Changed
+- Back, forward, and load-board buttons are now hidden during active gameplay; only the share button remains visible, freeing up screen space on smaller phones
+
 ## [2.0.5] - 2026-10-12
 
 ### Added
