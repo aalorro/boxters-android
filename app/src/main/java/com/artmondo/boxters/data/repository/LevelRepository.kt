@@ -618,7 +618,7 @@ object LevelRepository {
                 ObjectiveDef(type = "achieveCombo", description = "Build a 3x combo \u2014 chain 3 words through shared tiles", target = 3),
                 ObjectiveDef(type = "illuminateAnchors", description = "Use the red Anchor tile in a word", target = 1)
             ),
-            tutorial = TutorialDef("Tip: With an Anchor and a combo target, try to include the Anchor in your chain path so every word satisfies both goals.")
+            tutorial = TutorialDef("Every word must pass through the red-rimmed Anchor tile. Build your chain through it to satisfy both goals.")
         ),
 
         LevelData(
