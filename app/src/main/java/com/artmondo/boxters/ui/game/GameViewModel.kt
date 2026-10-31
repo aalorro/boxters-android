@@ -465,7 +465,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         p.levelsCompleted++
         p.gamesPlayed++
 
-        // Restore lives only if playing at the same level or higher than where lives were lost
+        // Restore lives only if winning at or beyond the level where lives were lost
         var livesRestored = false
         if (p.lives < Gameplay.MAX_LIVES) {
             val currentAbsolute = absoluteLevel(currentMode.id, currentLevelIndex)
