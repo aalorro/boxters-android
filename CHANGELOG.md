@@ -2,6 +2,16 @@
 
 All notable changes to Boxters will be documented in this file.
 
+## [2.1.1] - 2026-10-31
+
+### Fixed
+- Simple and Clear levels now correctly restore the saved board when the player exits and returns (board was not restoring when the player had navigated to a different level via back/forward buttons before exiting)
+- Clear 14 tutorial text corrected to "6+ letter words" to match the actual objective
+- Chain 7 tutorial text corrected: every word must pass through the anchor tile (not just one word)
+
+### Added
+- 5 new dictionary words: ramen, gui, alm, bling, sala
+
 ## [2.1.0] - 2026-10-18
 
 ### Added

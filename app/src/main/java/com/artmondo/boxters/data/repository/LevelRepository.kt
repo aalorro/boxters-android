@@ -466,7 +466,7 @@ object LevelRepository {
                 ObjectiveDef(type = "clearAllCells", description = "Clear all 37 cells", target = 1),
                 ObjectiveDef(type = "formWord", description = "Form 3 words of 6+ letters", target = 3, params = mapOf("minLength" to 6))
             ),
-            tutorial = TutorialDef("8 moves, 37 tiles. You need 5+ letter words almost every turn. Scan the whole board before each move!")
+            tutorial = TutorialDef("8 moves, 37 tiles. You need 6+ letter words almost every turn. Scan the whole board before each move!")
         ),
 
         // ── CHAIN MODE (Levels 28-41) ──
@@ -583,7 +583,7 @@ object LevelRepository {
                 ObjectiveDef(type = "formWord", description = "Form 6 words (3+ letters each)", target = 6, params = mapOf("minLength" to 3)),
                 ObjectiveDef(type = "illuminateAnchors", description = "Use the red Anchor tile in a word", target = 1)
             ),
-            tutorial = TutorialDef("Anchor tile ahead! At least one of your words must pass through the red-rimmed tile.")
+            tutorial = TutorialDef("Every word must pass through the red-rimmed tile.")
         ),
 
         LevelData(

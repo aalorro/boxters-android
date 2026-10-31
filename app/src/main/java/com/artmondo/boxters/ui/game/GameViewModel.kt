@@ -1192,7 +1192,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun tryRestoreBoard(): Boolean {
         val snapshot = playerRepository.loadBoardSnapshot(currentMode.id) ?: return false
-        if (snapshot.levelIndex != currentLevelIndex) return false
+        // Use the snapshot's level index so the player returns to wherever they left off,
+        // even if they navigated to a different level before exiting.
+        currentLevelIndex = snapshot.levelIndex
 
         val absoluteIndex = LevelRepository.getFirstLevelForMode(currentMode.id) + currentLevelIndex
         val levelData = LevelRepository.getLevel(absoluteIndex) ?: return false
